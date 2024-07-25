@@ -2,4 +2,4 @@
 
 <h2>Super DuckHunt 2.0 Interactive IRC game (zCcore Plugin Module)</h2>
 
-COMING SOON
+IN DEVELOPMENT
