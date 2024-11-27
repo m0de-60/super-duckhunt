@@ -1,0 +1,45 @@
+[duckhunt]
+serverlist = server1,server2
+server1_channels = #Channel1,#Channel2,#ChannelX
+server2_channels = #ChannelA,#ChannelB,#ChannelX
+
+[server1]
+channels = #Channel1,#Channel2,#ChannelX
+
+[server2]
+channels = #ChannelA,#ChannelB,#ChannelX
+
+[server1_channel1]
+maxducks = 6
+spawntime = 35
+flytime = 120
+duckexp = 15
+duckfear = 50
+duckgold = 40
+friendrate = 71
+relays = 0
+therules = gunricochet,thebushes,gunconf,infammo,bang,bef
+rules = 5,15,on,off,on,on
+top_shot = daily,weekly,monthly,totalshot,t_day,t_week,t_month
+bedazzled = 0
+soggy = 0
+sabotage = 0
+expl_ammo = testing^50,0,neo_nemesis^23
+gun_grease = 0
+trigger_lock = testing^12
+sunglasses = 0
+silencer = 0
+lucky_charm = 0
+accident_insurance = 0
+rain_coat = 0
+duck_bomb = 0
+bread_lock = testing^12
+popcorn = testing^50
+confiscated = neo_nemesis
+disarmed = 0
+bombed = 0
+duck_jam = 0
+jammed = 0
+
+[server1_channel1_ducks]
+cache = 0
