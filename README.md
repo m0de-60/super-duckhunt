@@ -8,4 +8,6 @@ Multi-threaded and asyncronous, better and faster, ported from the standalone v1
 
 INCOMPLETE SCRIPT: This is the current ultra beta source code and progress on Super DuckHunt v1.9.9 which is a zCore port of v1.1.4
 
-VERSION NOTES: 1.9.9 is the base code for 2.0.0
+<H2>VERSION NOTES:</H2>
+
+11-27-2024 Initial posting of incomplete progress. v1.9.9 is the base code for v2.0.0
