@@ -4,7 +4,7 @@
 # Filename..........: duckhunt.py
 # Version...........: 1.9.9 (v1.1.4 ported to zcore) prototype for 2.0.0
 # Author............: Mode60
-# Description.......: zCore plugin adaptation of Super DuckHunt Bot.
+# Description.......: zCore plugin adaptation of Super DuckHunt Bot. '' Super DuckHunt II ''
 # Remarks...........: This is the second version generation of the Super DuckHunt IRC bot series.
 # ======================================================================================================================
 # Port Notes: Some things from the original Super DuckHunt just won't work with zCore. This was expected.
@@ -12,6 +12,7 @@
 #             original form in v1.1.4
 #             The port's aspiration is to be similar to v1.1.4 but with zcore capabilities of multi-net/chan
 #             v1.9.9 will consist of the ported v1.1.4, then building off v1.9.9 with new features and code for v2.0.0
+#             v1.9.9 will also contain new i18n support for translators.
 import sys_zcore as pc
 import asyncio
 import logging
@@ -188,6 +189,8 @@ async def evt_join(server, joindata):
 #  =====================================================================================================================
 # PRIVMSG Event
 # evt_privmsg('servername', b':Username!~Host@mask.net PRIVMSG target :Message data')
+
+
 async def evt_privmsg(server, message):
     global rdata
     mdata = message.split(b' ')
@@ -216,7 +219,6 @@ async def evt_privmsg(server, message):
                     rdata[server, chan]['duckhunt'] = True
                     # pc.privmsg_(server, channel, 'Super DuckHunt has been turned on')
                     await duckhunt(server, dchannel, 'start')
-                    # start duck hunt here
                     return
             elif mdata[4].lower() == b'off':
                 if rdata[server, chan]['duckhunt'] is False:
@@ -238,6 +240,7 @@ async def evt_privmsg(server, message):
     if b'#' in channel:
         # --------------------------------------------------------------------------------------------------------------
         # !topduck
+        # ################################### NOT FINISHED
         if mdata[3].lower() == b':!topduck':
             print(f'Top duck!')
             pc.privmsg_(server, channel, 'async TopDuck!')
@@ -297,44 +300,10 @@ async def evt_privmsg(server, message):
         if mdata[3].lower() == b':!bang':
             if game_rules(server, dchannel, 'bang') == 'off':
                 return
-            # new users with no stats
-            # b'playername' = Rounds?Mags?MaxRounds?MaxMags,Ducks,GoldenDucks,xp,level,levelup,
-            #                 notusedanymore,notusedanymore,Accuracy?Reliability?MaxReliability,BestTime,
-            #                 Accidents,Bread?MaxBread,Loaf,MaxLoaf,DuckFriends
-            if not pc.cnfexists('duckhunt.cnf', dsect, dusername):
-                dinfo = '7?3?7?3,0,0,0,1,200,0,0,75?80?80,0,0,12?12?3?3,0'
-                pc.cnfwrite('duckhunt.cnf', dsect, dusername, str(dinfo))
-                # pc.cnfwrite('duckhunt.cnf', dsect, 'cache', '1')  # ???
-            # gun is confiscated
-            if pc.iistok(rdata[server, chan]['confiscated'], dusername, ',') is True:
-                pc.privmsg_(server, channel, username.decode() + ' > \x034You are not armed.\x03')
-                return
 
-            time_data(server, dchannel, dusername, 'all-time')
-
-            # player is soggy
-            if pc.istok_n(rdata[server, chan]['soggy'], dusername, ',', '^', 0) is True:
-                # determine time remaining
-                ptime = pc.gettok_n(rdata[server, chan]['gun_grease'], dusername, ',', '^', 0, 1)
-                ptime = pc.cputime() - float(ptime)
-                timeval = pc.timeconvert(ptime)
-                pc.privmsg_(server, channel, username.decode() + " > \x034Your clothes are all soggy. You cannot hunt ducks until you're dry. \x033[Time Remaining: " + str(timeval) + ']\x03')
-                return
-
-            # player is bombed
-            if pc.istok_n(rdata[server, chan]['bombed'], dusername, ',', '^', 0) is True:
-                pc.privmsg_(server, channel, username.decode() + " > \x034Your clothes are crusty and filthy from being duck bombed. You cannot hunt ducks like this, you need new clothes.")
-                return
-
-            # gun is sabotaged
-            # add duck exists to this statement
-            if pc.istok_n(rdata[server, chan]['sabotage'], dusername, ',', '^', 0) is True and pc.istok_n(rdata[server, chan]['trigger_lock'], dusername, ',', '^', 0) is False:
-                time_data(server, channel, dusername, 'sabotage', 'rem')
-                pc.privmsg_(server, channel, "Sabotaged")
-
-            # print(f'Bang!')
             # pc.privmsg_(server, channel, 'Bang!')
-            await bang(server, channel, username)
+            # await bang(server, channel, username)
+            bang(server, channel, username)
             return
 
         # --------------------------------------------------------------------------------------------------------------
@@ -343,9 +312,9 @@ async def evt_privmsg(server, message):
             if game_rules(server, dchannel, 'bang') == 'off':
                 return
 
-            # print(f'Reload!')
             # pc.privmsg_(server, channel, 'Reload!')
-            await reload(server, channel, username)
+            # await reload(server, channel, username)
+            reload(server, channel, username)
             return
 
         # --------------------------------------------------------------------------------------------------------------
@@ -353,32 +322,11 @@ async def evt_privmsg(server, message):
         if mdata[3].lower() == b':!bef':
             if game_rules(server, dchannel, 'bef') == 'off':
                 return
-            # new users with no stats
-            # b'playername' = Rounds?Mags?MaxRounds?MaxMags,Ducks,GoldenDucks,xp,level,levelup,
-            #                 notusedanymore,notusedanymore,Accuracy?Reliability?MaxReliability,BestTime,
-            #                 Accidents,Bread?MaxBread,Loaf,MaxLoaf,DuckFriends
-            if not pc.cnfexists('duckhunt.cnf', dsect, dusername):
-                dinfo = '7?3?7?3,0,0,0,1,200,0,0,75?80?80,0,0,12?12?3?3,0'
-                pc.cnfwrite('duckhunt.cnf', dsect, dusername, str(dinfo))
-                # pc.cnfwrite('duckhunt.cnf', dsect, 'cache', '1')  # ???
-
-            # player is bombed
-            if pc.istok_n(rdata[server, chan]['bombed'], dusername, ',', '^', 0) is True:
-                pc.privmsg_(server, channel, username.decode() + ' > \x034Your clothes are crusty and filthy from being duck bombed. You cannot befriend ducks like this, you need new clothes.\x03')
-                return
-
-            # player is soggy
-            if pc.istok_n(rdata[server, chan]['soggy'], dusername, ',', '^', 0) is True:
-                # determine time remaining
-                ptime = pc.gettok_n(rdata[server, chan]['gun_grease'], dusername, ',', '^', 0, 1)
-                ptime = pc.cputime() - float(ptime)
-                timeval = pc.timeconvert(ptime)
-                pc.privmsg_(server, channel, username.decode() + " > \x034Your clothes are all soggy. You cannot befriend ducks until you're dry. \x033[Time Remaining: " + str(timeval) + ']\x03')
-                return
 
             # print(f'Bef!')
             # pc.privmsg_(server, channel, 'Bef!')
-            await bef(server, channel, username)
+            # await bef(server, channel, username)
+            bef(server, channel, username)
             return
 
         # --------------------------------------------------------------------------------------------------------------
@@ -389,17 +337,22 @@ async def evt_privmsg(server, message):
 
             # print(f'Reloaf!')
             # pc.privmsg_(server, channel, 'Reloaf!')
-            await reloaf(server, channel, username)
+            # await reloaf(server, channel, username)
+            reloaf(server, channel, username)
             return
 
         # --------------------------------------------------------------------------------------------------------------
         # !lastduck
+        # ################################### NOT FINISHED
         if mdata[3].lower() == b':!lastduck':
             print(f'Last duck!')
             pc.privmsg_(server, channel, 'LastDuck!')
             return
+        # ################################################
+
         # --------------------------------------------------------------------------------------------------------------
         # !rearm
+        # ###### needs its out async function ###### #
         if mdata[3].lower() == b':!rearm' and pc.is_admin(server, dusername) is True:
             # rules disabled
             if game_rules(server, dchannel, 'bang') == 'off':
@@ -436,6 +389,7 @@ async def evt_privmsg(server, message):
 
         # --------------------------------------------------------------------------------------------------------------
         # !disarm
+        # ###### needs its out async function ###### #
         if mdata[3].lower() == b':!disarm' and pc.is_admin(server, dusername) is True:
             if game_rules(server, dchannel, 'bang') == 'off':
                 return
@@ -462,15 +416,17 @@ async def evt_privmsg(server, message):
 
         # --------------------------------------------------------------------------------------------------------------
         # !bomb
+        # ################################### NOT FINISHED
         if mdata[3].lower() == b':!bomb':
             print(f'Bomb!')
             pc.privmsg_(server, channel, 'Bomb!')
             return
+        # #################################################
 
         # --------------------------------------------------------------------------------------------------------------
         # !swim
         if mdata[3].lower() == b':!swim':
-            print(f'Swim!')
+            # print(f'Swim!')
             if pc.cnfexists('duckhunt.cnf', dsect, dusername) is False:
                 pc.privmsg_(server, channel, "You haven't played yet. Shoot some ducks first.")
                 return
@@ -562,7 +518,7 @@ async def evt_privmsg(server, message):
                     if mdata[5].lower() == b'0':
                         if str(game_rules(server, dchannel, 'thebushes')) == '0':
                             pc.notice_(server, username, '[DuckHunt] * Searching the bushes is already turned off.')
-                        game_rules(server, dchannel, 'gunricochet', '0')
+                        game_rules(server, dchannel, 'thebushes', '0')
                         pc.notice_(server, username, '[DuckHunt] * Searching the bushes has been turned OFF at: 0%')
                         return
                     mdata5 = mdata[5].decode()
@@ -973,9 +929,11 @@ def ctrl_data(server, channel, user, ctrl_name, args=''):
         # ctrl_data('serverid', '#channel', 'username', 'confiscated', 'rem') ------------------------------------------
         # remove user name from confiscated list, if it exists in the list
         if args == 'rem':
+            # print(f'HERE 932')
             if rdata[server, chan]['confiscated'] == duser:
                 rdata[server, chan]['confiscated'] = '0'
                 pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'confiscated', rdata[server, chan]['confiscated'])
+                # print(f'HERE 932')
                 return 1
             else:
                 token = rdata[server, chan]['confiscated'].split(',')
@@ -2426,7 +2384,8 @@ async def swim(server, channel, user):
 # Shooting guns
 
 # !bang ----------------------------------------------------------------------------------------------------------------
-async def bang(server, channel, user):
+# async def bang(server, channel, user):
+def bang(server, channel, user):
     global rdata
     dchannel = channel.decode()
     dchannel = dchannel.lower()
@@ -2434,8 +2393,43 @@ async def bang(server, channel, user):
     duser = user.decode()
     duser = duser.lower()
 
+    # new users with no stats
+    # b'playername' = Rounds?Mags?MaxRounds?MaxMags,Ducks,GoldenDucks,xp,level,levelup,
+    #                 notusedanymore,notusedanymore,Accuracy?Reliability?MaxReliability,BestTime,
+    #                 Accidents,Bread?MaxBread,Loaf,MaxLoaf,DuckFriends
+    if not pc.cnfexists('duckhunt.cnf', server + '_' + chan + '_ducks', duser):
+        dinfo = '7?3?7?3,0,0,0,1,200,0,0,75?80?80,0,0,12?12?3?3,0'
+        pc.cnfwrite('duckhunt.cnf', server + '_' + chan + '_ducks', duser, str(dinfo))
+        # pc.cnfwrite('duckhunt.cnf', dsect, 'cache', '1')  # ???
+
+    # gun is confiscated
+    if pc.iistok(rdata[server, chan]['confiscated'], duser, ',') is True:
+        pc.privmsg_(server, channel, user.decode() + ' > \x034You are not armed.\x03')
+        return
+
     # check all timed items/effects
     time_data(server, dchannel, duser, 'all-time')
+
+    # player is soggy
+    if pc.istok_n(rdata[server, chan]['soggy'], duser, ',', '^', 0) is True:
+        # determine time remaining
+        ptime = pc.gettok_n(rdata[server, chan]['gun_grease'], duser, ',', '^', 0, 1)
+        ptime = pc.cputime() - float(ptime)
+        timeval = pc.timeconvert(ptime)
+        pc.privmsg_(server, channel, user.decode() + " > \x034Your clothes are all soggy. You cannot hunt ducks until you're dry. \x033[Time Remaining: " + str(timeval) + ']\x03')
+        return
+
+    # player is bombed
+    if pc.istok_n(rdata[server, chan]['bombed'], duser, ',', '^', 0) is True:
+        pc.privmsg_(server, channel, user.decode() + " > \x034Your clothes are crusty and filthy from being duck bombed. You cannot hunt ducks like this, you need new clothes.")
+        return
+
+    # gun is sabotaged
+    # add duck exists to this statement
+    if pc.istok_n(rdata[server, chan]['sabotage'], duser, ',', '^', 0) is True and pc.istok_n(rdata[server, chan]['trigger_lock'], duser, ',', '^', 0) is False:
+        time_data(server, channel, duser, 'sabotage', 'rem')
+        pc.privmsg_(server, channel, "Sabotaged")
+        return
 
     # shooting data
     # ammo = ''
@@ -2443,11 +2437,7 @@ async def bang(server, channel, user):
     mrounds = int(duckinfo(server, dchannel, duser, 'ammo-mr'))
     mags = int(duckinfo(server, dchannel, duser, 'ammo-m'))
     mmags = int(duckinfo(server, dchannel, duser, 'ammo-mm'))
-    # bread data
-    # bread = int(duckinfo(server, dchannel, duser, 'bread-b'))
-    # mbread = int(duckinfo(server, dchannel, duser, 'bread-mb'))
-    # loaf = int(duckinfo(server, dchannel, duser, 'bread-l'))
-    # mloaf = int(duckinfo(server, dchannel, duser, 'bread-ml'))
+
     # gun data
     gunstats = duckinfo(server, dchannel, duser, 'guninfo')
     accuracy = int(pc.gettok(gunstats, 0, '?'))
@@ -3103,7 +3093,8 @@ async def bang(server, channel, user):
         return
 
 # !reload --------------------------------------------------------------------------------------------------------------
-async def reload(server, channel, user):
+# async def reload(server, channel, user):
+def reload(server, channel, user):
     global rdata
     dchannel = channel.decode()
     dchannel = dchannel.lower()
@@ -3173,15 +3164,39 @@ async def reload(server, channel, user):
 # ======================================================================================================================
 # Feeding ducks (!bef)
 
-#-----------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # !bef function
-async def bef(server, channel, user):
+# async def bef(server, channel, user):
+def bef(server, channel, user):
     global rdata
     dchannel = channel.decode()
     dchannel = dchannel.lower()
     chan = dchannel.replace('#', '')
     duser = user.decode()
     duser = duser.lower()
+
+    # new users with no stats
+    # b'playername' = Rounds?Mags?MaxRounds?MaxMags,Ducks,GoldenDucks,xp,level,levelup,
+    #                 notusedanymore,notusedanymore,Accuracy?Reliability?MaxReliability,BestTime,
+    #                 Accidents,Bread?MaxBread,Loaf,MaxLoaf,DuckFriends
+    if not pc.cnfexists('duckhunt.cnf', server + '_' + chan + '_ducks', duser):
+        dinfo = '7?3?7?3,0,0,0,1,200,0,0,75?80?80,0,0,12?12?3?3,0'
+        pc.cnfwrite('duckhunt.cnf', server + '_' + chan + '_ducks', duser, str(dinfo))
+        # pc.cnfwrite('duckhunt.cnf', dsect, 'cache', '1')  # ???
+
+    # player is bombed
+    if pc.istok_n(rdata[server, chan]['bombed'], duser, ',', '^', 0) is True:
+        pc.privmsg_(server, channel, user.decode() + ' > \x034Your clothes are crusty and filthy from being duck bombed. You cannot befriend ducks like this, you need new clothes.\x03')
+        return
+
+    # player is soggy
+    if pc.istok_n(rdata[server, chan]['soggy'], duser, ',', '^', 0) is True:
+        # determine time remaining
+        ptime = pc.gettok_n(rdata[server, chan]['soggy'], duser, ',', '^', 0, 1)
+        ptime = pc.cputime() - float(ptime)
+        timeval = pc.timeconvert(ptime)
+        pc.privmsg_(server, channel, user.decode() + " > \x034Your clothes are all soggy. You cannot befriend ducks until you're dry. \x033[Time Remaining: " + str(timeval) + ']\x03')
+        return
 
     # check all timed items/effects
     time_data(server, dchannel, duser, 'all-time')
@@ -3518,7 +3533,8 @@ async def bef(server, channel, user):
 
 # !bread or !reloaf ----------------------------------------------------------------------------------------------------
 # reloaf('serverid', b'#Channel', b'Username')
-async def reloaf(server, channel, user):
+# async def reloaf(server, channel, user):
+def reloaf(server, channel, user):
     global rdata
     dchannel = channel.decode()
     dchannel = dchannel.lower()
