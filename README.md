@@ -10,6 +10,6 @@ INCOMPLETE SCRIPT: This is the current ultra beta source code and progress on Su
 
 <H2>VERSION NOTES:</H2>
 
-02-06-2025 Port is 90% finished, progress posted in duckhunt.py, still needs bug testing and tweaking. v1.9.9. RELEASE WILL INCLUDE i18n, <b>also requires updating your zcore.</b> (New stuff, improvements and more progress)
+02-06-2025 Port is 90% finished, progress posted in duckhunt.py, still needs bug testing and tweaking. v1.9.9. RELEASE WILL INCLUDE i18n, <b>also requires updating your zCore.</b> (New stuff, improvements and more progress)
 
 11-27-2024 Initial posting of incomplete progress. v1.9.9 is the base code for v2.0.0
