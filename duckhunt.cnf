@@ -40,6 +40,10 @@ disarmed = 0
 bombed = 0
 duck_jam = 0
 jammed = 0
+camping_permit = 0
+camp_count = 0
+illegal_camping = 0
+fatigue = 0
 
 [server1_channel1_ducks]
 cache = 0
