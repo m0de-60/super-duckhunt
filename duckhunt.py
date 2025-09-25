@@ -119,6 +119,7 @@ def plugin_init_():
             rdata[server, chan]['camp_count'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'camp_count')
             rdata[server, chan]['illegal_camping'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'illegal_camping')
             rdata[server, chan]['fatigue'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'fatigue')
+            rdata[server, chan]['fatigue_point'] = 0
             rdata[server, chan]['fear_factor'] = False  # do not change
 
             for y in range(rdata[server, chan]['maxducks']):
@@ -686,17 +687,19 @@ def game_rules(server, channel, rule, args=''):
         # permit camping = X^TIME
         #   X is number allowed before permit is required
         #   TIME is X is hours
-        campmode = pc.gettok(rdata[server, chan]['rules'].split('^'))
-        if campmode[0] == '0':
-            camping = 'Camping: FREE CAMPING'
-        elif campmode[0] != '0':
+        campmode = pc.gettok(rdata[server, chan]['rules'], 6, ',').split('^')
+        camping = 'Camping: FREE CAMPING'
+        if campmode[0] != '0':
             camping = 'Camping: PERMIT REQUIRED (Limit: ' + campmode[0] + ' ducks in ' + campmode[1] + ' hours.)'
-
+        # player fatigue
+        fatiguemode = 'Player fatigue: ON'
+        if pc.gettok(rdata[server, chan]['rules'], 7, ',') == 'off':
+            fatiguemode = 'Player fatigue: OFF'
         # if data3 == b'!rules' and datarelay is True:
         #    irc.send(b'PRIVMSG ' + duckchan + b' :[' + duckchan + b' Super-DuckHunt In-Game Rules:] ' + confgun.encode() + b' | ' + ricogun.encode() + b' | ' + searchbush.encode() + b' | ' + ammomode.encode() + b' | ' + gamemode.encode() + b'\r\n')
         #    continue
         # irc.send(b'NOTICE ' + username + b' :[' + duckchan + b' Super-DuckHunt In-Game Rules:] ' + confgun.encode() + b' | ' + ricogun.encode() + b' | ' + searchbush.encode() + b' | ' + ammomode.encode() + b' | ' + gamemode.encode() + b'\r\n')
-        pc.notice_(server, args.encode(), '[' + channel + ' Super DuckHunt In-Game Rules:] ' + confgun + ' | ' + ricogun + ' | ' + searchbush + ' | ' + ammomode + ' | ' + gamemode + ' | ' + camping)
+        pc.notice_(server, args.encode(), '[DuckHunt] In-Game Rules for ' + channel + ': ' + confgun + ' | ' + ricogun + ' | ' + searchbush + ' | ' + ammomode + ' | ' + gamemode + ' | ' + camping + ' | ' + fatiguemode)
         return
     elif rule == 'gunricochet':
         rt = 0
@@ -712,6 +715,8 @@ def game_rules(server, channel, rule, args=''):
         rt = 5
     elif rule == 'camping':
         rt = 6
+    elif rule == 'fatigue':
+        rt = 7
     else:
         return 0
 
@@ -801,6 +806,10 @@ async def spawnduck(server, channel, dtype=''):
     global rdata
     chan = str(channel.replace('#', '')).lower()
 
+    # reset duckfear if no ducks are present
+    if ducksdata(server, channel) == 0:
+        rdata[server, chan]['fear_factor'] = False
+
     for x in range(len(rdata[server, chan]['duck'])):
         if rdata[server, chan]['duck'][x] == '0':
             if dtype == '':
@@ -837,6 +846,10 @@ async def fleeduck(server, channel, duckid):
     global rdata
     chan = str(channel.replace('#', '')).lower()
     rdata[server, chan]['duck'][int(duckid)] = '0'
+    # reset duckfear if no ducks are present
+    if ducksdata(server, channel) == 0:
+        rdata[server, chan]['fear_factor'] = False
+
     pc.privmsg_(server, channel.encode(), b"A duck flies away.     \x0314\xc2\xb7\xc2\xb0'`'\xc2\xb0-.,\xc2\xb8\xc2\xb8.\xc2\xb7\xc2\xb0'`")
     return
 
@@ -1156,23 +1169,30 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                 utime = pc.gettok(duckinfo(server, dchannel, user, 'fatigue'), 1, '^')
                 timem = pc.cputime() - float(utime)
                 ftg_p = pc.gettok(duckinfo(server, dchannel, user, 'fatigue'), 0, '^')
-                # if fatigue time is greater than 6 hours, deduct accordingly
+                if ftg_p == '0':
+                    continue
+                # if fatigue time is greater than 8 hours, remove all fatigue
+                if timem >= pc.hour8():
+                    duckinfo(server, dchannel, user, 'fatigue', '0^' + str(pc.cputime))
+                    continue
+                # if fatigue time is greater than 6 hours, deduct accordingly, 60 fatigue points
                 if timem >= pc.hour6():
-                    if int(ftg_p) <= 60:
+                    # if int(ftg_p) <= 60:
+                    if 60 >= int(ftg_p) > 0:
                         duckinfo(server, dchannel, user, 'fatgiue', '0^' + str(pc.cputime()))
                     else:
                         math = int(ftg_p) - 60
                         duckinfo(server, dchannel, user, 'fatigue', str(math) + '^' + str(pc.cputime()))
                     continue
+                # if fatigue time is greather than 1 hour, deduct accordingly, 20 fatigue points per hour
                 if timem >= pc.hour1():
-                    if int(ftg_p) <= 10:
+                    # if int(ftg_p) <= 20:
+                    if 10 >= int(ftg_p) > 0:
                         duckinfo(server, dchannel, user, 'fatigue', '0^' + str(pc.cputime()))
                     else:
-                        ftg_p = int(ftg_p) - 10
+                        ftg_p = int(ftg_p) - 20
                         duckinfo(server, dchannel, user, 'fatgiue', str(ftg_p) + '^' + str(pc.cputime()))
                 continue
-
-            # fatigue - user is completely fatigued and must rest for 6 hours
 
             if pc.istok_n(rdata[server, chan][listitem[z]], user, ',', '^', 0) is True:
                 tok = rdata[server, chan][listitem[z]].split(',')
@@ -1257,7 +1277,7 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                         # 24 hour items --------------------------------------------------------------------------------
                         elif round(timem) >= pc.hour24():
                             # 24 hour items
-                            if eff_type(listitem[z]) == 2:
+                            if eff_type(listitem[z]) == 2 or eff_type(listitem[z]) == 3:
                                 if pc.numtok(rdata[server, chan][listitem[z]], ',') < 2:
                                     newtok = '0'
                                 else:
@@ -1366,7 +1386,6 @@ def time_data(server, channel, user, eff_name, args='', data=''):
             pc.cnfwrite('duckhunt.cnf', server + '_' + chan, eff_name, token)
             rdata[server, chan][eff_name] = token
             return
-
 
     # time_data('serverid', '#channel', 'username', 'effect name', 'rem')
     # Removes player entry from effect
@@ -1713,9 +1732,9 @@ def inveffect(server, channel, user):
 
     # assemble hunting bag
     if huntingbag != '0':
-        huntingbag = '\x030,1[HUNTING BAG] ' + huntingbag
+        huntingbag = '\x038,1[HUNTING BAG] ' + huntingbag
     if huntingbag == '0':
-        huntingbag = '\x030,1[HUNTING BAG]\x034,1 None'
+        huntingbag = '\x038,1[HUNTING BAG]\x034,1 None'
 
     # bedazzled
     if pc.istok_n(rdata[server, chan]['bedazzled'], duser, ',', '^', 0) is True:
@@ -1747,9 +1766,9 @@ def inveffect(server, channel, user):
 
     # assemble effects box
     if effects != '0':
-        effects = '\x030,1[EFFECTS] ' + effects
+        effects = '\x038,1[EFFECTS] ' + effects
     if effects == '0':
-        effects = '\x030,1[EFFECTS]\x034,1 None'
+        effects = '\x038,1[EFFECTS]\x034,1 None'
     # return formatted message
     return huntingbag + '::' + effects
 # ===> inveffect
@@ -1806,11 +1825,11 @@ async def duckstats(server, channel, user, ruser, ext=''):
     friend = duckinfo(server, dchannel, druser, 'friend').encode()
 
     if game_rules(server, dchannel, 'infammo') == 'on':
-        scorebox = b'\x030,1[SCORE]\x037,1 Best Time:\x034,1 ' + besttime + b' \x030,1|\x037,1 Level:\x034,1 ' + level + b' \x030,1|\x037,1 xp:\x034,1 ' + xp + b' \x030,1|\x037,1 Ducks:\x034,1 ' + tducks + b' \x030,1|\x037,1 Golden Ducks:\x034,1 ' + gducks + b' \x030,1|\x037,1 Befriended Ducks:\x034,1 ' + friend + b' \x030,1|\x037,1 Accidents:\x034,1 ' + accidents
-        breadbox = b'\x030,1[BREAD BOX]\x037,1 Bread Pieces:\x034,1 ' + bread + b'/' + mbread + b' \x030,1|\x037,1 Loaf: \x02\x033Inf\x02'
-        gunbox = b'\x030,1[GUN STATS]\x037,1 Status:\x034,1 ' + gunstatus + b' \x030,1|\x037,1 Rounds:\x034,1 ' + rounds + b'/' + mrounds + b' \x030,1|\x037,1 Magazines: \x02\x033Inf\x02\x03 \x030,1|\x037,1 Accuracy:\x034,1 ' + accuracy + b'% \x030,1|\x037,1 Current Reliability:\x034,1 ' + reliability + b'% \x030,1|\x037,1 Max Reliability:\x034,1 ' + mreliability + b'%'
+        scorebox = b'\x037,1 Best Time:\x034,1 ' + besttime + b' \x030,1|\x037,1 Level:\x034,1 ' + level + b' \x030,1|\x037,1 xp:\x034,1 ' + xp + b' \x030,1|\x037,1 Ducks:\x034,1 ' + tducks + b' \x030,1|\x037,1 Golden Ducks:\x034,1 ' + gducks + b' \x030,1|\x037,1 Befriended Ducks:\x034,1 ' + friend + b' \x030,1|\x037,1 Accidents:\x034,1 ' + accidents
+        breadbox = b'\x038,1[BREAD BOX]\x037,1 Bread Pieces:\x034,1 ' + bread + b'/' + mbread + b' \x030,1|\x037,1 Loaf: \x02\x033Inf\x02'
+        gunbox = b'\x038,1[GUN STATS]\x037,1 Status:\x034,1 ' + gunstatus + b' \x030,1|\x037,1 Rounds:\x034,1 ' + rounds + b'/' + mrounds + b' \x030,1|\x037,1 Magazines: \x02\x033Inf\x02\x03 \x030,1|\x037,1 Accuracy:\x034,1 ' + accuracy + b'% \x030,1|\x037,1 Current Reliability:\x034,1 ' + reliability + b'% \x030,1|\x037,1 Max Reliability:\x034,1 ' + mreliability + b'%'
     if game_rules(server, dchannel, 'infammo') == 'off':
-        scorebox = b'\x038,1[SCORE]\x037,1 Best Time:\x034,1 ' + besttime + b' \x030,1|\x037,1 Level:\x034,1 ' + level + b' \x030,1|\x037,1 xp:\x034,1 ' + xp + b' \x030,1|\x037,1 Ducks:\x034,1 ' + tducks + b' \x030,1|\x037,1 Golden Ducks:\x034,1 ' + gducks + b' \x030,1|\x037,1 Befriended Ducks:\x034,1 ' + friend + b' \x030,1|\x037,1 Accidents:\x034,1 ' + accidents
+        scorebox = b'\x037,1 Best Time:\x034,1 ' + besttime + b' \x030,1|\x037,1 Level:\x034,1 ' + level + b' \x030,1|\x037,1 xp:\x034,1 ' + xp + b' \x030,1|\x037,1 Ducks:\x034,1 ' + tducks + b' \x030,1|\x037,1 Golden Ducks:\x034,1 ' + gducks + b' \x030,1|\x037,1 Befriended Ducks:\x034,1 ' + friend + b' \x030,1|\x037,1 Accidents:\x034,1 ' + accidents
         breadbox = b'\x038,1[BREAD BOX]\x037,1 Bread Pieces:\x034,1 ' + bread + b'/' + mbread + b' \x030,1|\x037,1 Loaf:\x034,1 ' + loaf + b'/' + mloaf
         gunbox = b'\x038,1[GUN STATS]\x037,1 Status:\x034,1 ' + gunstatus + b' \x030,1|\x037,1 Rounds:\x034,1 ' + rounds + b'/' + mrounds + b' \x030,1|\x037,1 Magazines:\x034,1 ' + mags + b'/' + mmags + b' \x030,1|\x037,1 Accuracy:\x034,1 ' + accuracy + b'% \x030,1|\x037,1 Current Reliability:\x034,1 ' + reliability + b'% \x030,1|\x037,1 Max Reliability:\x034,1 ' + mreliability + b'%'
     # left off here need to finish porting inveffect
@@ -1819,12 +1838,16 @@ async def duckstats(server, channel, user, ruser, ext=''):
     huntingbag = huntingbag.encode()
     effectsbox = pc.gettok(hbe, 1, '::')
     effectsbox = effectsbox.encode()
-    pc.notice_(server, user, b'\x038,1[DuckStats:\x037,1 ' + ruser + b'\x038,1] ' + scorebox + b' ' + gunbox)
-    pc.notice_(server, user, breadbox + b' ' + effectsbox)
+
+    # pc.notice_(server, user, b'\x038,1[DuckStats:\x037,1 ' + ruser + b'\x038,1] ' + scorebox + b' ' + gunbox)
+    # pc.notice_(server, user, breadbox + b' ' + effectsbox)
+    # pc.notice_(server, user, huntingbag)
+
+    pc.notice_(server, user, b'\x038,1[DuckStats:\x037,1 ' + ruser + b'\x038,1] ' + scorebox)
+    pc.notice_(server, user, gunbox)
+    pc.notice_(server, user, breadbox)
+    pc.notice_(server, user, effectsbox)
     pc.notice_(server, user, huntingbag)
-    # irc.send(b'NOTICE ' + user + b' :\x038,1[DuckStats:\x037,1 ' + ruser + b'\x038,1] ' + scorebox + b' ' + gunbox + b'\r\n')
-    # irc.send(b'NOTICE ' + user + b' :' + breadbox + b' ' + effectsbox + b'\r\n')
-    # irc.send(b'NOTICE ' + user + b' :' + huntingbag + b'\r\n')
     return
 
 
@@ -2698,6 +2721,9 @@ async def swim(server, channel, user):
     xp = duckinfo(server, dchannel, duser, 'xp')
     level = duckinfo(server, dchannel, duser, 'level')
 
+    # check all timed items/effects
+    time_data(server, dchannel, duser, 'all-time')
+
     # deterimine xp subtract
     rxp = 2
     if int(xp) >= 10000 or int(level) >= 10:
@@ -2926,7 +2952,7 @@ def bang(server, channel, user):
 
     # add 1 fatigue point per shot here
     ftg_points = ftg_points + 1
-    duckinfo(server, dchannel, duser, 'farigue', str(ftg_points) + '^' + str(pc.cputime()))
+    duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
 
     # a duck exists
     if ducksdata(server, dchannel) > 0:
@@ -3465,7 +3491,8 @@ def bang(server, channel, user):
                 rxp = dmg + 1
 
             # gunconf is off
-            if gunconf == 'off':
+            # if gunconf == 'off':
+            if game_rules(server, dchannel, 'gunconf') == 'off':
                 # deduct xp
                 rxp = rxp + 4
                 if int(xp) <= rxp:
@@ -3663,6 +3690,9 @@ def bef(server, channel, user):
         if pc.cnfread('duckhunt.cnf', server + '_' + chan + '_ducks', 'cache') == '0':
             pc.cnfwrite('duckhunt.cnf', dsect, 'cache', '1')  # ???
 
+    # check all timed items/effects
+    time_data(server, dchannel, duser, 'all-time')
+
     # player is bombed
     if pc.istok_n(rdata[server, chan]['bombed'], duser, ',', '^', 0) is True:
         pc.privmsg_(server, channel, user.decode() + ' > \x034Your clothes are crusty and filthy from being duck bombed. You cannot befriend ducks like this, you need new clothes.\x03')
@@ -3677,8 +3707,17 @@ def bef(server, channel, user):
         pc.privmsg_(server, channel, user.decode() + " > \x034Your clothes are all soggy. You cannot befriend ducks until you're dry. \x033[Time Remaining: " + str(timeval) + ']\x03')
         return
 
-    # check all timed items/effects
-    time_data(server, dchannel, duser, 'all-time')
+    # # check all timed items/effects
+    # time_data(server, dchannel, duser, 'all-time')
+
+    # player is fatigued and must rest
+    if pc.istok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0) is True:
+        ptime = pc.gettok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0, 1)
+        ptime = pc.hour6() - pc.ceiling(pc.cputime() - float(ptime))
+        ptime = pc.hour24() - ptime
+        timeval = pc.timeconvert(ptime)
+        pc.privmsg_(server, channel, user.decode() + ' > \x034You are exhausted from fatigue! \x033[Time Remaining: ' + str(timeval) + ']\x03')
+        return
 
     # player has illegal camping penalty
     if pc.istok_n(rdata[server, chan]['illegal_camping'], duser, ',', '^', 0) is True and game_rules(server, dchannel, 'camping') == 'on':
@@ -3699,6 +3738,7 @@ def bef(server, channel, user):
     level = duckinfo(server, dchannel, duser, 'level')
     levelup = duckinfo(server, dchannel, duser, 'levelup')
     best = duckinfo(server, dchannel, duser, 'best')
+    ftg_points = int(pc.gettok(duckinfo(server, dchannel, duser, 'fatigue'), 0, '^'))  # fatigue points
 
     # bread box lock
     if pc.istok_n(rdata[server, chan]['bread_lock'], duser, ',', '^', 0) is True and ducksdata(server, dchannel) == 0:
@@ -3735,6 +3775,10 @@ def bef(server, channel, user):
             popc = int(popc) - 1
             user_data(server, dchannel, duser, 'popcorn', 'edit', str(popc))
 
+    # add 1 fatigue point per toss here
+    ftg_points = ftg_points + 1
+    duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
+
     # no duck in the area
     if ducksdata(server, dchannel) == 0:
 
@@ -3765,6 +3809,50 @@ def bef(server, channel, user):
 
     # duck exists in the area
     if ducksdata(server, dchannel) > 0:
+
+        # fatigue check here (miss if fatigue is too high)
+        # if ftg_points >= 90 and ftg_points <= 100:
+        if 80 <= ftg_points < 100:
+            friendornot = pc.rand(1, 170)
+            if friendornot > int(rdata[server, chan]['friendrate']):
+                rxp = pc.rand(1, 2)
+                if int(xp) >= 10000 or int(level) >= 10:
+                    rxp = rxp + pc.rand(5, 6)
+                elif int(xp) >= 5000 and int(xp) < 10000 and int(level) < 10:
+                    rxp = rxp + pc.rand(4, 5)
+                elif int(xp) < 5000 and int(xp) >= 1500:
+                    rxp = rxp + pc.rand(2, 3)
+                # deduct xp
+                if int(xp) <= rxp:
+                    xp = 0
+                if int(xp) > rxp:
+                    xp = int(xp) - rxp
+                duckinfo(server, dchannel, duser, 'xp', str(xp))
+                pc.privmsg_(server, channel, duser + " > \x034UNLUCKY\x03     \x034You tossed in the wrong direction due to fatigue!     [-" + str(rxp) + ' xp]\x03')
+                return
+
+        # player has collapsed from fatigue!
+        if ftg_points >= 100:
+            rxp = pc.rand(1, 2)
+            if int(xp) >= 10000 or int(level) >= 10:
+                rxp = rxp + pc.rand(5, 6)
+            elif int(xp) >= 5000 and int(xp) < 10000 and int(level) < 10:
+                rxp = rxp + pc.rand(4, 5)
+            elif int(xp) < 5000 and int(xp) >= 1500:
+                rxp = rxp + pc.rand(2, 3)
+            # deduct xp
+            if int(xp) <= rxp:
+                xp = 0
+            if int(xp) > rxp:
+                xp = int(xp) - rxp
+            duckinfo(server, dchannel, duser, 'xp', str(xp))
+            if rdata[server, chan]['fatigue'] == '0':
+                rdata[server, chan]['fatigue'] = duser + '^' + str(pc.cputime())
+            else:
+                rdata[server, chan]['fatigue'] = rdata[server, chan]['fatigue'] + ',' + user + '^' + str(pc.cputime())
+            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'fatigue', rdata[server, chan]['fatigue'])
+            pc.privmsg_(server, channel, user.decode() + ' > \x034has collapsed from fatigue and must rest for 6 hours!   [-' + str(rxp) + ' xp]\x03')
+            return
 
         # player is bedazzled
         if pc.istok_n(rdata[server, chan]['bedazzled'], duser, ',', '^', 0) is True:
@@ -3948,6 +4036,10 @@ def bef(server, channel, user):
                             rdata[server, chan]['illegal_camping'] = rdata[server, chan]['illegal_camping'] + ',' + cctok
                         pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
                         pc.privmsg_(server, channel, user.decode() + ' > Has been penalized for illegal camping! ' + user.decode() + ' cannot hunt for 2 hours. \x034[Illegal Camping]')
+
+                # add 10 fatigue points for normal duck
+                ftg_points = ftg_points + 10
+                duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
                 return
 
             # normal-gold duck
@@ -4073,6 +4165,10 @@ def bef(server, channel, user):
                                 rdata[server, chan]['illegal_camping'] = rdata[server, chan]['illegal_camping'] + ',' + cctok
                             pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
                             pc.privmsg_(server, channel, user.decode() + ' > Has been penalized for illegal camping! ' + user.decode() + ' cannot hunt for 2 hours. \x034[Illegal Camping]')
+
+                    # add 15 fatigue points for golden duck
+                    ftg_points = ftg_points + 15
+                    duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
                     return
 
 # !bread or !reloaf ----------------------------------------------------------------------------------------------------
@@ -4086,6 +4182,9 @@ def reloaf(server, channel, user):
 
     duser = user.decode()
     # duser = duser.lower()
+
+    # check all timed items/effects
+    time_data(server, dchannel, duser, 'all-time')
 
     # illegal camping penalty
     if pc.istok_n(rdata[server, chan]['illegal_camping'], duser, ',', '^', 0) is True and game_rules(server, dchannel, 'camping') == 'on':
