@@ -44,6 +44,11 @@ camping_permit = 0
 camp_count = 0
 illegal_camping = 0
 fatigue = 0
+fatigue = 0
+tday = 0
+tweek = 0
+tmonth = 0
+topshot = 0,0,0,0
 
 [server1_channel1_ducks]
 cache = 0
