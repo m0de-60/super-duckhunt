@@ -2753,7 +2753,7 @@ async def shop(server, channel, user, itemid, target=''):
         xp = int(xp) - shopprice(server, channel, user, 26)
         # remove fatigued status if applied
         if pc.istok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0) is True:
-            tokX = pc.gettok_n(rdata[server, chan]['fatigue'], duser, ',', '^')
+            tokX = pc.gettok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0 , 1)
             if pc.numtok(rdata[server, chan]['fatigue'], ',') < 2:
                 newtok = '0'
             else:
@@ -4788,3 +4788,4 @@ def user_data(server, channel, user, dataname, args, data=''):
             rdata[server, chan][dataname] = newstring
             pc.cnfwrite('duckhunt.cnf', server + '_' + chan, dataname, rdata[server, chan][dataname])
             return 1
+
