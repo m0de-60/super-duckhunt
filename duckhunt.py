@@ -121,6 +121,16 @@ def plugin_init_():
             rdata[server, chan]['fatigue'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'fatigue')
             rdata[server, chan]['fatigue_point'] = 0
             rdata[server, chan]['fear_factor'] = False  # do not change
+            # top shot statistics
+            rdata[server, chan]['top_shot'] = {}
+            t_shot = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'topshot')
+            rdata[server, chan]['top_shot']['daily'] = pc.gettok(t_shot, 0, ',')
+            rdata[server, chan]['top_shot']['weekly'] = pc.gettok(t_shot, 1, ',')
+            rdata[server, chan]['top_shot']['monthly'] = pc.gettok(t_shot, 2, ',')
+            rdata[server, chan]['top_shot']['totalshot'] = pc.gettok(t_shot, 3, ',')
+            rdata[server, chan]['top_shot']['day'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'tday')
+            rdata[server, chan]['top_shot']['week'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'tweek')
+            rdata[server, chan]['top_shot']['month'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'tmonth')
 
             for y in range(rdata[server, chan]['maxducks']):
                 rdata[server, chan]['duck'][y] = '0'
@@ -747,6 +757,9 @@ def ducktimer(server, channel):
         pc.bot_sleep(0.01)
         if rdata[server, chan]['duckhunt'] is False:
             break
+
+        # Check total shot timers and days for changes etc
+        
         # Determine if its time to spawn a duck
         calc = pc.cputime() - float(rdata[server, chan]['timer'])
         if calc >= rdata[server, chan]['spawntime'] and ducksdata(server, channel) < rdata[server, chan]['maxducks']:
@@ -1229,7 +1242,7 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                         if listitem[z] == 'illegal_camping':
                             # utime = pc.gettok(tok[x], 1, '^')
                             # timem = pc.cputime() - float(utime)
-                            if round(timem) >= pc.hour8():
+                            if round(timem) >= pc.hour2():
                                 if pc.numtok(rdata[server, chan][listitem[z]], ',') < 2:
                                     newtok = '0'
                                 else:
@@ -1736,6 +1749,20 @@ def inveffect(server, channel, user):
     if huntingbag == '0':
         huntingbag = '\x038,1[HUNTING BAG]\x034,1 None'
 
+    # fatigue
+    if pc.istok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0) is True:
+        if effects != '0':
+            effects = effects + ' \x030,1|\x037,1 ' + 'Fatigued'
+        if effects == '0':
+            effects = '\x037,1Fatigued'
+
+    # illegal camping
+    if pc.istok_n(rdata[server, chan]['illegal_camping'], duser, ',', '^', 0) is True:
+        if effects != '0':
+            effects = effects + ' \x030,1|\x037,1 ' + 'Illegal Camping Penalty'
+        if effects == '0':
+            effects = '\x037,1Illegal Camping Penalty'
+
     # bedazzled
     if pc.istok_n(rdata[server, chan]['bedazzled'], duser, ',', '^', 0) is True:
         if effects != '0':
@@ -1805,6 +1832,16 @@ async def duckstats(server, channel, user, ruser, ext=''):
     mreliability = pc.gettok(duckinfo(server, dchannel, druser, 'guninfo'), 2, '?').encode()
     besttime = duckinfo(server, dchannel, druser, 'best').encode()
 
+    fatigue = str(duckinfo(server, dchannel, druser, 'fatigue'))
+    fatigue = int(pc.gettok(fatigue, 0, '^'))
+    if fatigue <= 25:
+        fatigue = '\x033,1 ' + str(fatigue) + '%'
+    elif fatigue > 25 and fatigue <= 70:
+        fatigue = '\x038,1 ' + str(fatigue) + '%'
+    elif fatigue > 70:
+        fatigue = '\x034,1 ' + str(fatigue) + '%'
+    fatigue = fatigue.encode()
+
     if besttime == b'0':
         besttime = b'NA'
 
@@ -1825,11 +1862,11 @@ async def duckstats(server, channel, user, ruser, ext=''):
     friend = duckinfo(server, dchannel, druser, 'friend').encode()
 
     if game_rules(server, dchannel, 'infammo') == 'on':
-        scorebox = b'\x037,1 Best Time:\x034,1 ' + besttime + b' \x030,1|\x037,1 Level:\x034,1 ' + level + b' \x030,1|\x037,1 xp:\x034,1 ' + xp + b' \x030,1|\x037,1 Ducks:\x034,1 ' + tducks + b' \x030,1|\x037,1 Golden Ducks:\x034,1 ' + gducks + b' \x030,1|\x037,1 Befriended Ducks:\x034,1 ' + friend + b' \x030,1|\x037,1 Accidents:\x034,1 ' + accidents
+        scorebox = b'\x037,1 Best Time:\x034,1 ' + besttime + b' \x030,1|\x037,1 Level:\x034,1 ' + level + b' \x030,1|\x037,1 xp:\x034,1 ' + xp + b' \x030,1|\x037,1 Fatigue:' + fatigue + b' \x030,1|\x037,1 Ducks:\x034,1 ' + tducks + b' \x030,1|\x037,1 Golden Ducks:\x034,1 ' + gducks + b' \x030,1|\x037,1 Befriended Ducks:\x034,1 ' + friend + b' \x030,1|\x037,1 Accidents:\x034,1 ' + accidents
         breadbox = b'\x038,1[BREAD BOX]\x037,1 Bread Pieces:\x034,1 ' + bread + b'/' + mbread + b' \x030,1|\x037,1 Loaf: \x02\x033Inf\x02'
         gunbox = b'\x038,1[GUN STATS]\x037,1 Status:\x034,1 ' + gunstatus + b' \x030,1|\x037,1 Rounds:\x034,1 ' + rounds + b'/' + mrounds + b' \x030,1|\x037,1 Magazines: \x02\x033Inf\x02\x03 \x030,1|\x037,1 Accuracy:\x034,1 ' + accuracy + b'% \x030,1|\x037,1 Current Reliability:\x034,1 ' + reliability + b'% \x030,1|\x037,1 Max Reliability:\x034,1 ' + mreliability + b'%'
     if game_rules(server, dchannel, 'infammo') == 'off':
-        scorebox = b'\x037,1 Best Time:\x034,1 ' + besttime + b' \x030,1|\x037,1 Level:\x034,1 ' + level + b' \x030,1|\x037,1 xp:\x034,1 ' + xp + b' \x030,1|\x037,1 Ducks:\x034,1 ' + tducks + b' \x030,1|\x037,1 Golden Ducks:\x034,1 ' + gducks + b' \x030,1|\x037,1 Befriended Ducks:\x034,1 ' + friend + b' \x030,1|\x037,1 Accidents:\x034,1 ' + accidents
+        scorebox = b'\x037,1 Best Time:\x034,1 ' + besttime + b' \x030,1|\x037,1 Level:\x034,1 ' + level + b' \x030,1|\x037,1 xp:\x034,1 ' + xp + b' \x030,1|\x037,1 Fatigue:' + fatigue + b' \x030,1|\x037,1 Ducks:\x034,1 ' + tducks + b' \x030,1|\x037,1 Golden Ducks:\x034,1 ' + gducks + b' \x030,1|\x037,1 Befriended Ducks:\x034,1 ' + friend + b' \x030,1|\x037,1 Accidents:\x034,1 ' + accidents
         breadbox = b'\x038,1[BREAD BOX]\x037,1 Bread Pieces:\x034,1 ' + bread + b'/' + mbread + b' \x030,1|\x037,1 Loaf:\x034,1 ' + loaf + b'/' + mloaf
         gunbox = b'\x038,1[GUN STATS]\x037,1 Status:\x034,1 ' + gunstatus + b' \x030,1|\x037,1 Rounds:\x034,1 ' + rounds + b'/' + mrounds + b' \x030,1|\x037,1 Magazines:\x034,1 ' + mags + b'/' + mmags + b' \x030,1|\x037,1 Accuracy:\x034,1 ' + accuracy + b'% \x030,1|\x037,1 Current Reliability:\x034,1 ' + reliability + b'% \x030,1|\x037,1 Max Reliability:\x034,1 ' + mreliability + b'%'
     # left off here need to finish porting inveffect
@@ -2705,6 +2742,33 @@ async def shop(server, channel, user, itemid, target=''):
         pc.notice_(server, user, 'You purchased Camping Permit. This will allow you to camp out for 8 hours.')
         return
     # 26 - coffee -----------------------------------------------------------------------------------------------------
+    if int(itemid) == 26:
+        fatigue = duckinfo(server, dchannel, duser, 'fatigue')
+        fatigue = int(pc.gettok(fatigue, 0, '^'))
+        # don't need it
+        if int(fatigue) == 0 and pc.istok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0) is False:
+            pc.notice_(server, user, 'You currently do not need coffee.')
+            return
+        # purchase
+        xp = int(xp) - shopprice(server, channel, user, 26)
+        # remove fatigued status if applied
+        if pc.istok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0) is True:
+            tokX = pc.gettok_n(rdata[server, chan]['fatigue'], duser, ',', '^')
+            if pc.numtok(rdata[server, chan]['fatigue'], ',') < 2:
+                newtok = '0'
+            else:
+                newtok = pc.deltok(rdata[server, chan]['fatigue'], tokX, ',')
+            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'fatigue', newtok)
+            rdata[server, chan]['fatigue'] = newtok
+        # removes 50 fatigue points
+        if int(fatigue) <= 50:
+            fatigue = '0'
+        else:
+            fatigue = str(int(fatigue) - 50)
+        duckinfo(server, dchannel, duser, 'fatigue', fatigue + '^' + str(pc.cputime()))
+        pc.notice_(server, user, 'You purchased Coffee. Your fatigue has been reduced by up to 50%')
+        return
+
     return
 
 # ======================================================================================================================
