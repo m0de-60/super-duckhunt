@@ -1185,26 +1185,26 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                 if ftg_p == '0':
                     continue
                 # if fatigue time is greater than 8 hours, remove all fatigue
-                if timem >= pc.hour8():
-                    duckinfo(server, dchannel, user, 'fatigue', '0^' + str(pc.cputime))
+                if round(timem) > pc.hour8():
+                    duckinfo(server, dchannel, user, 'fatigue', '0^' + str(pc.cputime()))
                     continue
                 # if fatigue time is greater than 6 hours, deduct accordingly, 60 fatigue points
-                if timem >= pc.hour6():
-                    # if int(ftg_p) <= 60:
-                    if 60 >= int(ftg_p) > 0:
-                        duckinfo(server, dchannel, user, 'fatgiue', '0^' + str(pc.cputime()))
+                if round(timem) >= pc.hour6():
+                    if int(ftg_p) <= 60:
+                    # if 60 >= int(ftg_p) > 0:
+                        duckinfo(server, dchannel, user, 'fatigue', '0^' + str(pc.cputime()))
                     else:
                         math = int(ftg_p) - 60
                         duckinfo(server, dchannel, user, 'fatigue', str(math) + '^' + str(pc.cputime()))
                     continue
                 # if fatigue time is greather than 1 hour, deduct accordingly, 20 fatigue points per hour
-                if timem >= pc.hour1():
-                    # if int(ftg_p) <= 20:
-                    if 10 >= int(ftg_p) > 0:
+                if round(timem) >= pc.hour1():
+                    if int(ftg_p) <= 20:
+                    # if 10 >= int(ftg_p) > 0:
                         duckinfo(server, dchannel, user, 'fatigue', '0^' + str(pc.cputime()))
                     else:
                         ftg_p = int(ftg_p) - 20
-                        duckinfo(server, dchannel, user, 'fatgiue', str(ftg_p) + '^' + str(pc.cputime()))
+                        duckinfo(server, dchannel, user, 'fatigue', str(ftg_p) + '^' + str(pc.cputime()))
                 continue
 
             if pc.istok_n(rdata[server, chan][listitem[z]], user, ',', '^', 0) is True:
@@ -2175,7 +2175,10 @@ def shopprice(server, channel, user, itemid):
             return 1000
     # 24 coffee --------------------------------------------------------------------------------------------------------
     if int(itemid) == 26:
-        return 100
+        if pc.istok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0) is True:
+            return 300
+        else:
+            return 100
     # unkown item/ID ---------------------------------------------------------------------------------------------------
     return 0
 
@@ -2753,11 +2756,11 @@ async def shop(server, channel, user, itemid, target=''):
         xp = int(xp) - shopprice(server, channel, user, 26)
         # remove fatigued status if applied
         if pc.istok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0) is True:
-            tokX = pc.gettok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0 , 1)
+            tokx = pc.gettok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0, 1)
             if pc.numtok(rdata[server, chan]['fatigue'], ',') < 2:
                 newtok = '0'
             else:
-                newtok = pc.deltok(rdata[server, chan]['fatigue'], tokX, ',')
+                newtok = pc.deltok(rdata[server, chan]['fatigue'], tokx, ',')
             pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'fatigue', newtok)
             rdata[server, chan]['fatigue'] = newtok
         # removes 50 fatigue points
@@ -2834,7 +2837,7 @@ def bang(server, channel, user):
     #                 fatigue,notusedanymore,Accuracy?Reliability?MaxReliability,BestTime,
     #                 Accidents,Bread?MaxBread,Loaf,MaxLoaf,DuckFriends
     if not pc.cnfexists('duckhunt.cnf', server + '_' + chan + '_ducks', duser):
-        dinfo = '7?3?7?3,0,0,0,1,200,0,0,75?80?80,0,0,12?12?3?3,0'
+        dinfo = '7?3?7?3,0,0,0,1,200,0^' + pc.cputime() + ',0,75?80?80,0,0,12?12?3?3,0'
         pc.cnfwrite('duckhunt.cnf', server + '_' + chan + '_ducks', duser, str(dinfo))
         if pc.cnfread('duckhunt.cnf', server + '_' + chan + '_ducks', 'cache') == '0':
             pc.cnfwrite('duckhunt.cnf', dsect, 'cache', '1')  # ???
@@ -3749,7 +3752,7 @@ def bef(server, channel, user):
     #                 notusedanymore,notusedanymore,Accuracy?Reliability?MaxReliability,BestTime,
     #                 Accidents,Bread?MaxBread,Loaf,MaxLoaf,DuckFriends
     if not pc.cnfexists('duckhunt.cnf', server + '_' + chan + '_ducks', duser):
-        dinfo = '7?3?7?3,0,0,0,1,200,0,0,75?80?80,0,0,12?12?3?3,0'
+        dinfo = '7?3?7?3,0,0,0,1,200,0^' + pc.cputime() + ',0,75?80?80,0,0,12?12?3?3,0'
         pc.cnfwrite('duckhunt.cnf', server + '_' + chan + '_ducks', duser, str(dinfo))
         if pc.cnfread('duckhunt.cnf', server + '_' + chan + '_ducks', 'cache') == '0':
             pc.cnfwrite('duckhunt.cnf', dsect, 'cache', '1')  # ???
@@ -4788,4 +4791,3 @@ def user_data(server, channel, user, dataname, args, data=''):
             rdata[server, chan][dataname] = newstring
             pc.cnfwrite('duckhunt.cnf', server + '_' + chan, dataname, rdata[server, chan][dataname])
             return 1
-
