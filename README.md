@@ -10,7 +10,7 @@ INCOMPLETE SCRIPT: This is the current ultra beta source code and progress on Su
 
 <H2>VERSION NOTES:</H2>
 
-09-26-2025 Fatigue and illegal camping processes 90% completed and working smoothly, needs tweaking and to add some stuff to allow fatigue and camping penalties to be toggled and adjusted. Camping Permits and Coffee now available in shop; items 25 and 26. <b>NEXT THING TO BE DONE:</b> add the top shot counter and reset functions. <b>ON THE IMMEDIATE TO DO LIST:</b> 1) Flood protection and controls. 2) Improving Golden Duck structure to allow for a variable XP to be earned, the more HP the golden duck has + amount of misses will determine golden duck XP, and eliminated the fixed XP for golden ducks. 3) full i18n support (eventually).
+09-26-2025 Changed duckstats to include fatigue and easier reading. More changes to duckstats coming. Fatigue and illegal camping processes 90% completed and working smoothly, needs tweaking and to add some stuff to allow fatigue and camping penalties to be toggled and adjusted. Camping Permits and Coffee now available in shop; items 25 and 26. <b>NEXT THING TO BE DONE:</b> add the top shot counter and reset functions. <b>ON THE IMMEDIATE TO DO LIST:</b> 1) Flood protection and controls. 2) Improving Golden Duck structure to allow for a variable XP to be earned, the more HP the golden duck has + amount of misses will determine golden duck XP, and eliminated the fixed XP for golden ducks. 3) full i18n support (eventually).
 
 06-18-2025 Working on adding some new features to v1.9.9 for testing before moving to v2.0.0 adding some things to increase difficulty and even playing field. This includes camping permits/illegal camping penalties and fatigue, still incomplete but operational.
 
