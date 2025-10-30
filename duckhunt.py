@@ -96,6 +96,7 @@ def plugin_init_():
             rdata[server, chan]['timer'] = '0'
             rdata[server, chan]['thread'] = ''
             rdata[server, chan]['duck'] = {}
+            rdata[server, chan]['golduckxp'] = {}  # For determining golden duck variable xp
             rdata[server, chan]['gun_grease'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'gun_grease')
             rdata[server, chan]['silencer'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'silencer')
             rdata[server, chan]['lucky_charm'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'lucky_charm')
@@ -122,18 +123,19 @@ def plugin_init_():
             rdata[server, chan]['fatigue_point'] = 0
             rdata[server, chan]['fear_factor'] = False  # do not change
             # top shot statistics
-            rdata[server, chan]['top_shot'] = {}
-            t_shot = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'topshot')
-            rdata[server, chan]['top_shot']['daily'] = pc.gettok(t_shot, 0, ',')
-            rdata[server, chan]['top_shot']['weekly'] = pc.gettok(t_shot, 1, ',')
-            rdata[server, chan]['top_shot']['monthly'] = pc.gettok(t_shot, 2, ',')
-            rdata[server, chan]['top_shot']['totalshot'] = pc.gettok(t_shot, 3, ',')
-            rdata[server, chan]['top_shot']['day'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'tday')
-            rdata[server, chan]['top_shot']['week'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'tweek')
-            rdata[server, chan]['top_shot']['month'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'tmonth')
+            rdata[server, chan]['top_stat'] = {}
+            t_shot = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'topstat')
+            rdata[server, chan]['top_stat']['daily'] = pc.gettok(t_shot, 0, ',')
+            rdata[server, chan]['top_stat']['weekly'] = pc.gettok(t_shot, 1, ',')
+            rdata[server, chan]['top_stat']['monthly'] = pc.gettok(t_shot, 2, ',')
+            rdata[server, chan]['top_stat']['totalstat'] = pc.gettok(t_shot, 3, ',')
+            rdata[server, chan]['top_stat']['day'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'tday')
+            rdata[server, chan]['top_stat']['week'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'tweek')
+            rdata[server, chan]['top_stat']['month'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'tmonth')
 
             for y in range(rdata[server, chan]['maxducks']):
-                rdata[server, chan]['duck'][y] = '0'
+                rdata[server, chan]['duck'][y] = '0'  # Duck ID assignment (leave at '0')
+                rdata[server, chan]['golduckxp'][y] = '0'
                 continue
             continue
         continue
@@ -835,14 +837,18 @@ async def spawnduck(server, channel, dtype=''):
                     # To alter difficulty change these numbers. lowest HP must be at least 3.
                     # MUST ALSO CHANGE THE 2ND OPTION FURTHER DOWN PT.2
                     # MODIFY BELOW THIS LINE ------------------------------------------------------>
-                    rdata[server, chan]['duck'][x] = str(pc.cputime()) + ',' + 'gold,' + str(pc.rand(4, 8)) + ',0'
+                    dkhp = pc.rand(4, 8)  # Set the golden ducks HP
+                    rdata[server, chan]['duck'][x] = str(pc.cputime()) + ',' + 'gold,' + str(dkhp) + ',0'  # assign duck info
+                    rdata[server, chan]['golduckxp'][x] = dkhp  # storage of original HP for variable xp purposes
                     # #################################################################################################
                 else:
                     rdata[server, chan]['duck'][x] = str(pc.cputime()) + ',' + 'normal,1,0'
             if dtype == 'gold':
                 # DIFFICULTY SETTINGS PT. 2 ###########################################################################
                 # Below setting must match the PT. 1 setting in pc.rand(X, X) ----------------->
-                rdata[server, chan]['duck'][x] = str(pc.cputime()) + ',' + 'gold,' + str(pc.rand(4, 8)) + ',0'
+                dkhp = pc.rand(4, 8)
+                rdata[server, chan]['duck'][x] = str(pc.cputime()) + ',' + 'gold,' + str(dkhp) + ',0'
+                rdata[server, chan]['golduckxp'][x] = dkhp
                 # #####################################################################################################
             if dtype == 'normal':
                 rdata[server, chan]['duck'][x] = str(pc.cputime()) + ',' + 'normal,1,0'
@@ -3033,7 +3039,8 @@ def bang(server, channel, user):
             if rdata[server, chan]['fear_factor'] >= rdata[server, chan]['duckfear']:
                 for x in range(len(rdata[server, chan]['duck'])):
                     if rdata[server, chan]['duck'][x] != '0':
-                        rdata[server, chan]['duck'][x] = '0'
+                        rdata[server, chan]['duck'][x] = '0'  # Rest Duck ID data
+                        rdata[server, chan]['golduckxp'][x] = '0'  # Reset golden duck XP variable (if applicable)
                     continue
                 pc.privmsg_(server, channel, b"\x034Frightened by so much noise, all ducks in the area have fled.\x03     \x0314\xc2\xb7\xc2\xb0'`'\xc2\xb0-.,\xc2\xb8\xc2\xb8.\xc2\xb7\xc2\xb0'`")
                 rdata[server, chan]['fear_factor'] = False
@@ -3276,6 +3283,10 @@ def bang(server, channel, user):
                     xp = int(xp) - int(rxp)
                 duckinfo(server, dchannel, duser, 'xp', str(xp))
 
+                # Add 1 point to variable xp multiplier
+                varxp = int(rdata[server, chan]['golduckxp'][int(duckid)]) + 1
+                rdata[server, chan]['golduckxp'][int(duckid)] = int(varxp)
+
                 # first miss, not golden yet
                 if pc.numtok(duckdata, ',') == 4:
                     duckdata = duckdata + ',1'
@@ -3314,6 +3325,11 @@ def bang(server, channel, user):
                     xp = 0
                 if int(xp) > int(rxp):
                     xp = int(xp) - int(rxp)
+
+                # Add 1 point to variable xp multiplier
+                varxp = int(rdata[server, chan]['golduckxp'][int(duckid)]) + 1
+                rdata[server, chan]['golduckxp'][int(duckid)] = int(varxp)
+
                 duckinfo(server, dchannel, duser, 'xp', str(xp))
                 pc.privmsg_(server, channel, user.decode() + ' > \x0314*BANG*\x03     \x034MISSED   [-' + str(rxp) + ' xp]\x03')
                 return
@@ -3351,6 +3367,7 @@ def bang(server, channel, user):
                     pc.privmsg_(server, channel, user.decode() + ' > \x0314*BANG*\x03     you shot down the duck in ' + str(reacttime) + ' seconds.     \x02\\_X<\x02   \x0314*KWAK*\x03   \x033[+' + str(exp) + ' xp - Lucky Charm] [TOTAL DUCKS: ' + str(ducks) + ']\x03')
                 # reset duck info
                 rdata[server, chan]['duck'][int(duckid)] = '0'
+                rdata[server, chan]['golduckxp'][int(duckid)] = '0'
                 rdata[server, chan]['timer'] = pc.cputime()
                 # silently rearms all confiscated guns
                 if game_rules(server, dchannel, 'gunconf') == 'on':
@@ -3394,8 +3411,8 @@ def bang(server, channel, user):
                         pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
                         pc.privmsg_(server, channel, user.decode() + ' > Has been penalized for illegal camping! ' + user.decode() + ' cannot hunt for 2 hours. \x034[Illegal Camping]')
 
-                # add 10 fatigue points for normal duck
-                ftg_points = ftg_points + 10
+                # add 5 fatigue points for normal duck
+                ftg_points = ftg_points + 5
                 duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
                 return
 
@@ -3449,7 +3466,7 @@ def bang(server, channel, user):
 
                 if int(duckhp) == 1 or expl is True:
 
-                    # TOP SHOT COUNTER
+                    # TOP SHOT COUNTER TO BE ADDED HERE
 
                     if expl is True:
                         expl = False
@@ -3465,7 +3482,7 @@ def bang(server, channel, user):
                     gducks = int(gducks) + 1
                     duckinfo(server, dchannel, duser, 'gducks', str(gducks))
                     # increase xp
-                    exp = int(rdata[server, chan]['duckexp']) * 3
+                    exp = int(rdata[server, chan]['duckexp']) * int(rdata[server, chan]['golduckxp'][int(duckid)])
                     # does not have lucky charm
                     if pc.istok_n(rdata[server, chan]['lucky_charm'], duser, ',', '^', 0) is False:
                         # exp = int(rdata[server, chan]['duckexp']) * 3
@@ -3482,6 +3499,7 @@ def bang(server, channel, user):
                         pc.privmsg_(server, channel, user.decode() + ' > \x0314*BANG*\x03     you shot down the GOLDEN DUCK in ' + str(reacttime) + ' seconds.     \x02\\_X<\x02   \x0314*KWAK*\x03   \x033[+' + str(exp) + ' xp - Lucky Charm] [TOTAL GOLDEN DUCKS: ' + str(gducks) + ']\x03')
                     # reset duck info
                     rdata[server, chan]['duck'][int(duckid)] = '0'
+                    rdata[server, chan]['golduckxp'][int(duckid)] = '0'
                     rdata[server, chan]['timer'] = pc.cputime()
                     # silently rearms all confiscated guns
                     if game_rules(server, dchannel, 'gunconf') == 'on':
@@ -3525,8 +3543,8 @@ def bang(server, channel, user):
                             pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
                             pc.privmsg_(server, channel, user.decode() + ' > Has been penalized for illegal camping! ' + user.decode() + ' cannot hunt for 2 hours. \x034[Illegal Camping]')
 
-                    # add 15 fatigue points for golden duck
-                    ftg_points = ftg_points + 15
+                    # add 10 fatigue points for golden duck
+                    ftg_points = ftg_points + 10
                     duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
                     return
 
@@ -3997,6 +4015,10 @@ def bef(server, channel, user):
             # mprint(f'normal-gold duck unlucky missed bread ----------------------------')
             if pc.gettok(duckdata, 1, ',') == 'gold':
 
+                # Add 1 point to variable xp multiplier
+                varxp = int(rdata[server, chan]['golduckxp'][int(duckid)]) + 1
+                rdata[server, chan]['golduckxp'][int(duckid)] = int(varxp)
+
                 # first miss, not golden yet
                 if pc.numtok(duckdata, ',') == 4:
                     duckdata = duckdata + ',1'
@@ -4015,6 +4037,11 @@ def bef(server, channel, user):
             # golden
             # mprint(f'golden duck unlucky missed bread ----------------------------')
             if pc.gettok(duckdata, 1, ',') == 'golden':
+
+                # Add 1 point to variable xp multiplier
+                varxp = int(rdata[server, chan]['golduckxp'][int(duckid)]) + 1
+                rdata[server, chan]['golduckxp'][int(duckid)] = int(varxp)
+
                 pc.privmsg_(server, channel, user.decode() + " > \x034UNLUCKY\x03     The GOLDEN DUCK didn't seem to notice. Try again.     \x02\\_O< QUACK\x02    \x034[-" + str(rxp) + ' xp]\x03')
                 return
 
@@ -4059,6 +4086,7 @@ def bef(server, channel, user):
 
                 # reset duck info
                 rdata[server, chan]['duck'][int(duckid)] = '0'
+                rdata[server, chan]['golduckxp'][int(duckid)] = '0'
                 rdata[server, chan]['timer'] = pc.cputime()
 
                 # silent rearm (for !bang)
@@ -4104,8 +4132,8 @@ def bef(server, channel, user):
                         pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
                         pc.privmsg_(server, channel, user.decode() + ' > Has been penalized for illegal camping! ' + user.decode() + ' cannot hunt for 2 hours. \x034[Illegal Camping]')
 
-                # add 10 fatigue points for normal duck
-                ftg_points = ftg_points + 10
+                # add 5 fatigue points for normal duck
+                ftg_points = ftg_points + 5
                 duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
                 return
 
@@ -4172,7 +4200,7 @@ def bef(server, channel, user):
 
                     # increase xp - lucky charm
                     if pc.istok_n(rdata[server, chan]['lucky_charm'], duser, ',', '^', 0) is True:
-                        exp = int(rdata[server, chan]['duckexp']) * 3
+                        exp = int(rdata[server, chan]['duckexp']) * rdata[server, chan]['golduckxp'][int(duckid)]
                         lcxp = pc.gettok_n(rdata[server, chan]['lucky_charm'], duser, ',', '^', 0, 2)
                         exp = int(exp) + int(lcxp)
                         xp = int(xp) + int(exp)
@@ -4181,13 +4209,14 @@ def bef(server, channel, user):
 
                     # increase xp - does not have lucky charm
                     if pc.istok_n(rdata[server, chan]['lucky_charm'], duser, ',', '^', 0) is False:
-                        exp = int(rdata[server, chan]['duckexp']) * 3
+                        exp = int(rdata[server, chan]['duckexp']) * rdata[server, chan]['golduckxp'][int(duckid)]
                         xp = int(xp) + int(exp)
                         duckinfo(server, dchannel, duser, 'xp', str(xp))
                         pc.privmsg_(server, channel, user.decode() + ' > \x0314FRIEND\x03     The GOLDEN DUCK ate the piece of ' + str(woid) + '!     \x02\\_0< QUAACK!\x02\x033   [BEFRIENDED DUCKS: ' + str(friend) + '] [+' + str(exp) + ' xp]\x03')
 
                     # reset duck info
                     rdata[server, chan]['duck'][int(duckid)] = '0'
+                    rdata[server, chan]['golduckxp'][int(duckid)] = '0'
                     rdata[server, chan]['timer'] = pc.cputime()
 
                     # silent rearm (for !bang)
@@ -4233,8 +4262,8 @@ def bef(server, channel, user):
                             pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
                             pc.privmsg_(server, channel, user.decode() + ' > Has been penalized for illegal camping! ' + user.decode() + ' cannot hunt for 2 hours. \x034[Illegal Camping]')
 
-                    # add 15 fatigue points for golden duck
-                    ftg_points = ftg_points + 15
+                    # add 10 fatigue points for golden duck
+                    ftg_points = ftg_points + 10
                     duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
                     return
 
@@ -4791,3 +4820,72 @@ def user_data(server, channel, user, dataname, args, data=''):
             rdata[server, chan][dataname] = newstring
             pc.cnfwrite('duckhunt.cnf', server + '_' + chan, dataname, rdata[server, chan][dataname])
             return 1
+
+# ======================================================================================================================
+# Total stats functions - REPLACEMENT FOR totalshot/tshot from v1.1.4
+
+# !tstat (or !tshot), !t_day, !t_week, !t_month -----------------------------------------------------------------------
+# tstat('server', '#channel', <daily,weekly,monthly,total>)
+# def tstat(server, channel, args=''):
+#    global rdata
+#    chan = channel.replace('#', '')
+#
+#    # !tstat or !tshot
+#    if args == 'total':
+#
+#    # !t_day
+#    if args == 'daily':
+#
+#    # !t_week
+#    if args == 'weekly':
+#
+#    # !t_month
+#    if args == 'monthly':
+
+# t_stat counter and reset control, adds statistics and resets data ----------------------------------------------------
+# t_stat('server', '#channel', <add-bang,add-bef,reset>, <day,week,month,total>)
+def t_stat(server, channel, args, ext=''):
+    global rdata
+    chan = channel.replace('#', '')
+
+    top_day = rdata[server, chan]['top_stat']['daily'].split('^')
+    top_week = rdata[server, chan]['top_stat']['weekly'].split('^')
+    top_month = rdata[server, chan]['top_stat']['monthly'].split('^')
+    top_total = rdata[server, chan]['top_stat']['totalstat'].split('^')
+
+    # t_stat('server', '#channel', 'add-bang')
+    if args == 'add-bang':
+        top_day[0] = int(top_day[0]) + 1
+        top_week[0] = int(top_week[0]) + 1
+        top_month[0] = int(top_month[0]) + 1
+        top_total[0] = int(top_total[0]) + 1
+
+    # t_stat('server', '#channel', 'add-bef')
+    if args == 'add-bef':
+        top_day[1] = int(top_day[1]) + 1
+        top_week[1] = int(top_week[1]) + 1
+        top_month[1] = int(top_month[1]) + 1
+        top_total[1] = int(top_total[1]) + 1
+
+    # t_stat('server', '#channel', 'reset', <day,week,month,total>
+    if args == 'reset':
+        if ext == 'day' or ext == 'total':
+            top_day[0] = 0
+            top_day[1] = 0
+        if ext == 'week' or ext == 'total':
+            top_week[0] = 0
+            top_week[1] = 0
+        if ext == 'month' or ext == 'total':
+            top_month[0] = 0
+            top_month[1] = 0
+        if ext == 'total':
+            top_total[0] = 0
+            top_total[1] = 0
+
+    rdata[server, chan]['top_stat']['daily'] = str(top_day[0]) + '^' + str(top_day[1])
+    rdata[server, chan]['top_stat']['weekly'] = str(top_week[0]) + '^' + str(top_week[1])
+    rdata[server, chan]['top_stat']['monthly'] = str(top_month[0]) + '^' + str(top_month[1])
+    rdata[server, chan]['top_stat']['totalstat'] = str(top_total[0]) + '^' + str(top_total[1])
+    newstatok = rdata[server, chan]['top_stat']['daily'] + ',' + rdata[server, chan]['top_stat']['weekly'] + ',' + rdata[server, chan]['top_stat']['monthly'] + ',' + rdata[server, chan]['top_stat']['totalstat']
+    pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'topstat', newstatok)
+    return
