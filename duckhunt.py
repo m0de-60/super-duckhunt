@@ -2760,6 +2760,7 @@ async def shop(server, channel, user, itemid, target=''):
             return
         # purchase
         xp = int(xp) - shopprice(server, channel, user, 26)
+        duckinfo(server, dchannel, duser, 'xp', str(xp))
         # remove fatigued status if applied
         if pc.istok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0) is True:
             tokx = pc.gettok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0, 1)
@@ -2843,7 +2844,7 @@ def bang(server, channel, user):
     #                 fatigue,notusedanymore,Accuracy?Reliability?MaxReliability,BestTime,
     #                 Accidents,Bread?MaxBread,Loaf,MaxLoaf,DuckFriends
     if not pc.cnfexists('duckhunt.cnf', server + '_' + chan + '_ducks', duser):
-        dinfo = '7?3?7?3,0,0,0,1,200,0^' + pc.cputime() + ',0,75?80?80,0,0,12?12?3?3,0'
+        dinfo = '7?3?7?3,0,0,0,1,200,0^' + str(pc.cputime()) + ',0,75?80?80,0,0,12?12?3?3,0'
         pc.cnfwrite('duckhunt.cnf', server + '_' + chan + '_ducks', duser, str(dinfo))
         if pc.cnfread('duckhunt.cnf', server + '_' + chan + '_ducks', 'cache') == '0':
             pc.cnfwrite('duckhunt.cnf', dsect, 'cache', '1')  # ???
@@ -2953,11 +2954,11 @@ def bang(server, channel, user):
             # user has gun grease
             if pc.istok_n(rdata[server, chan]['gun_grease'], duser, ',', '^', 0) is True:
                 jam = jam + 13
-                jammed = random.randint(1, int(jam))
+                jammed = pc.rand(1, int(jam))
             # user does not have gun grease
             if pc.istok_n(rdata[server, chan]['gun_grease'], duser, ',', '^', 0) is False:
                 jam = jam + 25
-                jammed = random.randint(1, int(jam))
+                jammed = pc.rand(1, int(jam))
 
         if jammed >= float(reliability) or pc.iistok(rdata[server, chan]['jammed'], duser, ',') is True:
             # add user to jammed list if list is empty
@@ -3770,7 +3771,7 @@ def bef(server, channel, user):
     #                 notusedanymore,notusedanymore,Accuracy?Reliability?MaxReliability,BestTime,
     #                 Accidents,Bread?MaxBread,Loaf,MaxLoaf,DuckFriends
     if not pc.cnfexists('duckhunt.cnf', server + '_' + chan + '_ducks', duser):
-        dinfo = '7?3?7?3,0,0,0,1,200,0^' + pc.cputime() + ',0,75?80?80,0,0,12?12?3?3,0'
+        dinfo = '7?3?7?3,0,0,0,1,200,0^' + str(pc.cputime()) + ',0,75?80?80,0,0,12?12?3?3,0'
         pc.cnfwrite('duckhunt.cnf', server + '_' + chan + '_ducks', duser, str(dinfo))
         if pc.cnfread('duckhunt.cnf', server + '_' + chan + '_ducks', 'cache') == '0':
             pc.cnfwrite('duckhunt.cnf', dsect, 'cache', '1')  # ???
@@ -4577,6 +4578,7 @@ def last_duck(server, channel, user):
 
     if ducksdata(server, channel) <= 0:
         last_time = pc.cputime() - float(rdata[server, chan]['timer'])
+        last_time = float(pc.hour24()) - last_time
         mesg = pc.timeconvert(last_time)
         pc.privmsg_(server, channel.encode(), user + ' > The last duck was seen: ' + mesg + ' ago.')
         return
