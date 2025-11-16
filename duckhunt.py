@@ -2709,7 +2709,7 @@ async def shop(server, channel, user, itemid, target=''):
         duckinfo(server, dchannel, duser, 'xp', str(xp))
         # get upgrade
         mrounds = int(mrounds) + 1
-        duckinfo(server, dchannel, duser, 'bread-mb', str(mrounds))
+        duckinfo(server, dchannel, duser, 'ammo-mr', str(mrounds))
         pc.notice_(server, user, 'You upgraded your magazines! They can now hold ' + str(mrounds) + ' rounds.')
         return
     # 24 - additional magazine -----------------------------------------------------------------------------------
@@ -4890,4 +4890,5 @@ def t_stat(server, channel, args, ext=''):
     rdata[server, chan]['top_stat']['totalstat'] = str(top_total[0]) + '^' + str(top_total[1])
     newstatok = rdata[server, chan]['top_stat']['daily'] + ',' + rdata[server, chan]['top_stat']['weekly'] + ',' + rdata[server, chan]['top_stat']['monthly'] + ',' + rdata[server, chan]['top_stat']['totalstat']
     pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'topstat', newstatok)
+
     return
