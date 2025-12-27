@@ -53,7 +53,7 @@ def mprint(string):
         print(f'[DuckHunt] * {string}')
 
     # debug logging
-    if rdata['debuglog'] is True:
+    if rdata['debuglog'] == 'on':
         logging.debug(f'[DuckHunt] * {string}')
     return
 
@@ -132,6 +132,12 @@ def plugin_init_():
             rdata[server, chan]['top_stat']['day'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'tday')
             rdata[server, chan]['top_stat']['week'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'tweek')
             rdata[server, chan]['top_stat']['month'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'tmonth')
+            # flood protection values
+            rdata[server, chan]['flood_check'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'floodcheck')
+            rdata[server, chan]['flood'] = 0
+            rdata[server, chan]['flood_time'] = pc.cputime()
+            rdata[server, chan]['flood_cont'] = False
+            rdata[server, chan]['flood_timer'] = ''
 
             for y in range(rdata[server, chan]['maxducks']):
                 rdata[server, chan]['duck'][y] = '0'  # Duck ID assignment (leave at '0')
@@ -210,7 +216,7 @@ async def evt_privmsg(server, message):
     if pc.iistok(rdata['serverlist'], server, ',') is False:
         return
     if b'#' in mdata[2] and pc.iistok(rdata[server, 'channels'], str(mdata[2].decode()).lower(), ',') is False:
-        return
+        return		
     username = pc.gettok(mdata[0], 0, b'!')
     username = username.replace(b':', b'')
     dusername = username.decode()
@@ -251,17 +257,64 @@ async def evt_privmsg(server, message):
     # CHANNEL User Commands !<commands>
     # ==================================================================================================================
     if b'#' in channel:
+
+        # FLOOD CONTROLS =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=
+
+        # flood control is active, ignore commands ---------------------------------------------------------------------
+        if rdata[server, chan]['flood_check'] == 'on':
+            # flood control activated
+            if rdata[server, chan]['flood_cont'] is True:
+                if mdata[3].lower() == b':!flood':
+                    if pc.is_admin(server, dusername) is True or pc.is_botmaster(dusername) is True:
+                        rdata[server, chan]['flood_time'] = pc.cputime()
+                        rdata[server, chan]['flood'] = 0
+                        rdata[server, chan]['flood_cont'] = False
+                        pc.privmsg_(server, channel, '\x037* Flood Control Override by ' + username.decode() + ' *\x03')
+                        return
+                else:
+                    return
+            # flood control not activated - determine if activation needed
+            else:
+                # rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
+                f_time = pc.cputime() - float(rdata[server, chan]['flood_time'])
+                # threshold not reached, reset time and count
+                if round(f_time) > 10 and int(rdata[server, chan]['flood']) < 8:
+                    rdata[server, chan]['flood_time'] = pc.cputime()
+                    rdata[server, chan]['flood'] = 0
+                # command threshold reached, check time
+                if int(rdata[server, chan]['flood']) > 8:
+                    f_time = pc.cputime() - float(rdata[server, chan]['flood_time'])
+                    # threshold reached for time and commands, activate flood control
+                    if round(f_time) <= 10:
+                        rdata[server, chan]['flood_cont'] = True
+                        rdata[server, chan]['flood_timer'] = pc.cputime()
+                        pc.privmsg_(server, channel, '\x034* Flood Control Activated *\x03')
+                        return
+                    # threshhold not reached, reset time and count
+                    if round(f_time) > 10:
+                        rdata[server, chan]['flood_time'] = pc.cputime()
+                        rdata[server, chan]['flood'] = 0
+
+        # =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
         # --------------------------------------------------------------------------------------------------------------
         # !topduck
         if mdata[3].lower() == b':!topduck':
             # print(f'Top duck!')
             # pc.privmsg_(server, channel, 'async TopDuck!')
+
+            # increase flood time
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
+            # command
             topduck(server, channel)
             return
 
         # --------------------------------------------------------------------------------------------------------------
         # !duckstats
         if mdata[3].lower() == b':!duckstats':
+            # increase flood time
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 5
+            
+            # command
             if len(mdata) >= 4:
                 if len(mdata) == 4:
                     if pc.cnfexists('duckhunt.cnf', dsect, dusername) is False:
@@ -284,6 +337,10 @@ async def evt_privmsg(server, message):
         # --------------------------------------------------------------------------------------------------------------
         # Shop
         if mdata[3].lower() == b':!shop':
+            # increase flood time
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 4
+            
+            # haven't played yet
             if pc.cnfexists('duckhunt.cnf', dsect, dusername) is False:
                 pc.notice_(server, username, username.decode() + " you can't use the shop yet because you haven't played. Shoot some ducks first.")
                 return
@@ -314,6 +371,8 @@ async def evt_privmsg(server, message):
             if game_rules(server, dchannel, 'bang') == 'off':
                 return
 
+            # increase flood time
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
             # pc.privmsg_(server, channel, 'Bang!')
             bang(server, channel, username)
             return
@@ -324,6 +383,8 @@ async def evt_privmsg(server, message):
             if game_rules(server, dchannel, 'bang') == 'off':
                 return
 
+            # increase flood time
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
             # pc.privmsg_(server, channel, 'Reload!')
             reload(server, channel, username)
             return
@@ -334,7 +395,8 @@ async def evt_privmsg(server, message):
             if game_rules(server, dchannel, 'bef') == 'off':
                 return
 
-            # print(f'Bef!')
+            # increase flood time
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
             # pc.privmsg_(server, channel, 'Bef!')
             bef(server, channel, username)
             return
@@ -345,7 +407,8 @@ async def evt_privmsg(server, message):
             if game_rules(server, dchannel, 'bef') == 'off':
                 return
 
-            # print(f'Reloaf!')
+            # increase flood time
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
             # pc.privmsg_(server, channel, 'Reloaf!')
             reloaf(server, channel, username)
             return
@@ -354,7 +417,8 @@ async def evt_privmsg(server, message):
         # !lastduck
         # ################################### NOT FINISHED
         if mdata[3].lower() == b':!lastduck':
-            # print(f'Last duck!')
+            # increase flood time
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
             # pc.privmsg_(server, channel, 'LastDuck!')
             last_duck(server, dchannel, dusername)
             return
@@ -364,6 +428,9 @@ async def evt_privmsg(server, message):
         # !rearm
         # ###### needs its own function ###### #
         if mdata[3].lower() == b':!rearm' and pc.is_admin(server, dusername) is True:
+            # increase flood time
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
+
             # rules disabled
             if game_rules(server, dchannel, 'bang') == 'off':
                 return
@@ -401,6 +468,9 @@ async def evt_privmsg(server, message):
         # !disarm
         # ###### needs its own function ###### #
         if mdata[3].lower() == b':!disarm' and pc.is_admin(server, dusername) is True:
+            # increase flood time
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
+            # rules disabled
             if game_rules(server, dchannel, 'bang') == 'off':
                 return
             if len(mdata) == 5:
@@ -429,6 +499,9 @@ async def evt_privmsg(server, message):
         # ################################### NOT FINISHED
         if mdata[3].lower() == b':!bomb':
             if len(mdata) == 5:
+                # increase flood time
+                rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
+                # set target player
                 targ = mdata[4].decode()
                 print(f'Bomb!')
                 # pc.privmsg_(server, channel, 'Bomb!')
@@ -439,6 +512,8 @@ async def evt_privmsg(server, message):
         # --------------------------------------------------------------------------------------------------------------
         # !swim
         if mdata[3].lower() == b':!swim':
+            # increase flood time
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
             # print(f'Swim!')
             if pc.cnfexists('duckhunt.cnf', dsect, dusername) is False:
                 pc.privmsg_(server, channel, "You haven't played yet. Shoot some ducks first.")
@@ -450,12 +525,18 @@ async def evt_privmsg(server, message):
         # --------------------------------------------------------------------------------------------------------------
         # !rules
         if mdata[3].lower() == b':!rules':
+            # increase flood time
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 3
+            # send rules message
             game_rules(server, dchannel, 'msg', dusername)
             return
 
         # --------------------------------------------------------------------------------------------------------------
         # !tshot
         if mdata[3].lower() == b':!tshot':
+            # increase flood time
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
+            # send total shot message
             pc.privmsg_(server, channel, 'Total Shot!')
             return
 
@@ -636,7 +717,6 @@ async def evt_privmsg(server, message):
                     pc.notice_(server, username, '[DuckHunt] * Free camping has been disabled. Camping permits are now required after ' + tokval[0] + ' ducks in ' + tokval[1] + ' hours.')
                 return
 
-
     return
 
 # ======================================================================================================================
@@ -761,7 +841,24 @@ def ducktimer(server, channel):
             break
 
         # Check total shot timers and days for changes etc
-        
+
+        # check flood timers here
+        if rdata[server, chan]['flood_check'] == 'on':
+            # flood control is not activated, time window reached, reset counts
+            if rdata[server, chan]['flood_cont'] is False:
+                f_time = pc.cputime() - float(rdata[server, chan]['flood_time'])
+                if round(f_time) >= 10:
+                    rdata[server, chan]['flood_time'] = pc.cputime()
+                    rdata[server, chan]['flood'] = 0
+            # flood control is activated, check time and deactivate when time window reached
+            if rdata[server, chan]['flood_cont'] is True:
+                f_time = pc.cputime() - float(rdata[server, chan]['flood_timer'])
+                if round(f_time) >= 45:
+                    rdata[server, chan]['flood_time'] = pc.cputime()
+                    rdata[server, chan]['flood'] = 0
+                    rdata[server, chan]['flood_cont'] = False
+                    pc.privmsg_(server, channel.encode(), '\x033* Flood Control Deactivated *\x03')
+
         # Determine if its time to spawn a duck
         calc = pc.cputime() - float(rdata[server, chan]['timer'])
         if calc >= rdata[server, chan]['spawntime'] and ducksdata(server, channel) < rdata[server, chan]['maxducks']:
@@ -4890,5 +4987,4 @@ def t_stat(server, channel, args, ext=''):
     rdata[server, chan]['top_stat']['totalstat'] = str(top_total[0]) + '^' + str(top_total[1])
     newstatok = rdata[server, chan]['top_stat']['daily'] + ',' + rdata[server, chan]['top_stat']['weekly'] + ',' + rdata[server, chan]['top_stat']['monthly'] + ',' + rdata[server, chan]['top_stat']['totalstat']
     pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'topstat', newstatok)
-
     return
