@@ -10,6 +10,7 @@ channels = #Channel1,#Channel2,#ChannelX
 channels = #ChannelA,#ChannelB,#ChannelX
 
 [server1_channel1]
+flood_check = on
 maxducks = 6
 spawntime = 35
 flytime = 120
