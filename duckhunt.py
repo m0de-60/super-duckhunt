@@ -226,6 +226,15 @@ async def evt_privmsg(server, message):
     chan = dchannel.replace('#', '')
     sect = server + '_' + chan
     dsect = server + '_' + chan + '_ducks'
+    # botmaster controls
+    if b'#' in channel and pc.is_botmaster(dusername) is True:
+
+        # /privmsg botname boost <player> (player boost)
+        if mdata[3].lower() == b':boost' and len(mdata) > 4:
+            dsuser = mdata[4].decode()
+            if pc.cnfexists('duckhunt.cnf', dsect, dsuser) is False:
+                pc.notice_(server, channel, 'User ' + dsuser + " has not played yet.")
+                return
 
     # admin controls
     if b'#' in channel and pc.is_admin(server, dusername) is True:
@@ -337,8 +346,8 @@ async def evt_privmsg(server, message):
         # --------------------------------------------------------------------------------------------------------------
         # Shop
         if mdata[3].lower() == b':!shop':
-            # increase flood time
-            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 4
+            # increase flood count by 1
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
             
             # haven't played yet
             if pc.cnfexists('duckhunt.cnf', dsect, dusername) is False:
@@ -346,6 +355,9 @@ async def evt_privmsg(server, message):
                 return
             # !shop - shop menu
             if len(mdata) == 4:
+                # increase flood count by addition 3 for shop menu
+                rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 3
+                # activate shop mennu
                 await shopmenu(server, channel, username)
                 return
             if len(mdata) >= 5:
@@ -836,7 +848,7 @@ def ducktimer(server, channel):
     chan = str(channel.replace('#', '')).lower()
     # duckid = 0
     while rdata[server, chan]['game'] is True:
-        pc.bot_sleep(0.01)
+        # pc.bot_sleep(0.01)
         if rdata[server, chan]['duckhunt'] is False:
             break
 
