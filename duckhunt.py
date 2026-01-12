@@ -848,7 +848,7 @@ def ducktimer(server, channel):
     chan = str(channel.replace('#', '')).lower()
     # duckid = 0
     while rdata[server, chan]['game'] is True:
-        # pc.bot_sleep(0.01)
+        pc.bot_sleep(0.01)
         if rdata[server, chan]['duckhunt'] is False:
             break
 
@@ -4999,4 +4999,5 @@ def t_stat(server, channel, args, ext=''):
     rdata[server, chan]['top_stat']['totalstat'] = str(top_total[0]) + '^' + str(top_total[1])
     newstatok = rdata[server, chan]['top_stat']['daily'] + ',' + rdata[server, chan]['top_stat']['weekly'] + ',' + rdata[server, chan]['top_stat']['monthly'] + ',' + rdata[server, chan]['top_stat']['totalstat']
     pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'topstat', newstatok)
+
     return
