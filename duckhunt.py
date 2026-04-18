@@ -357,7 +357,7 @@ async def evt_privmsg(server, message):
             if len(mdata) == 4:
                 # increase flood count by addition 3 for shop menu
                 rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 3
-                # activate shop mennu
+                # activate shop menu
                 await shopmenu(server, channel, username)
                 return
             if len(mdata) >= 5:
@@ -605,84 +605,111 @@ async def evt_privmsg(server, message):
                 else:
                     return 0
         # --------------------------------------------------------------------------------------------------------------
+        # /msg duckhunt reset #channel
+        if mdata[3].lower() == b':reset' and pc.is_botmaster(dusername) is True:
+            if len(mdata) != 5:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Use: /msg ' + rdata[server, 'botname'] + ' reset <channel>')
+                return
+            if b'#' not in mdata[4]:
+                pc.notice_(server, username, '[DuckHunt] * Invalid request. Channel name must contain a hash "#channel"')
+                return
+            chan = mdata[4].decode()
+            chan = chan.lower()
+            if pc.istok(rdata[server, 'channels'], chan, ',') is False:
+            # if chan not in rdata[server, 'channels']:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
+                return
+            stat_reset(server, chan)
+            pc.notice_(server, username, '[DuckHunt] * Reset complete!')
+            return
+        # --------------------------------------------------------------------------------------------------------------
         # /msg duckhunt rules <name> <args>
         if mdata[3].lower() == b':rules' and pc.is_botmaster(dusername) is True:
-            if len(mdata) == 4 or len(mdata) < 6 or len(mdata) > 6:
-                pc.notice_(server, username, '[DuckHunt] * Invalid input. Use: /msg ' + rdata[server, 'botname'] + ' rules <rule> <args>')
+            if len(mdata) == 4 or len(mdata) < 7 or len(mdata) > 7:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Use: /msg ' + rdata[server, 'botname'] + ' rules <channel> <rule> <args>')
                 return
-            if len(mdata) == 6:
+            if len(mdata) == 7:
+                try:
+                    tchan = mdata[4].decode()
+                    tchan = tchan.lower()
+                    tchan = tchan.replace('#', '')
+                    if pc.gettok(rdata[server, tchan]['rules'], 1, ','):
+                        dchannel = tchan
+                except KeyError:
+                    pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
+                    return
                 # /msg duckhunt rules gunricochet <args> ---------------------------------------------------------------
-                if mdata[4].lower() == b'gunricochet':
-                    if mdata[5].lower() == b'0':
+                if mdata[5].lower() == b'gunricochet':
+                    if mdata[6].lower() == b'0':
                         if str(game_rules(server, dchannel, 'gunricochet')) == '0':
                             pc.notice_(server, username, '[DuckHunt] * Bullet ricochet is already turned off.')
                         game_rules(server, dchannel, 'gunricochet', '0')
                         pc.notice_(server, username, '[DuckHunt] * Bullet ricochet has been turned OFF at: 0%')
                         return
-                    mdata5 = mdata[5].decode()
-                    if mdata5.isnumeric() is False or isinstance(str(mdata5), float) is True:
+                    mdata6 = mdata[6].decode()
+                    if mdata6.isnumeric() is False or isinstance(str(mdata6), float) is True:
                         pc.notice_(server, username, '[DuckHunt] * Invalid request: Bullet ricochet value must be an integer.\r\n')
                         return
-                    game_rules(server, channel, 'gunricochet', str(data5))
-                    pc.notice_(server, username, '[DuckHunt] * Bullet ricochet has been set to ON at: ' + str(data5), + '%.\r\n')
+                    game_rules(server, dchannel, 'gunricochet', str(mdata6))
+                    pc.notice_(server, username, '[DuckHunt] * Bullet ricochet has been set to ON at: ' + str(mdata6), + '%.\r\n')
                     return
                 # /msg duckhunt rules thebushes <args> -----------------------------------------------------------------
-                if mdata[4].lower() == b'thebushes':
-                    if mdata[5].lower() == b'0':
+                if mdata[5].lower() == b'thebushes':
+                    if mdata[6].lower() == b'0':
                         if str(game_rules(server, dchannel, 'thebushes')) == '0':
                             pc.notice_(server, username, '[DuckHunt] * Searching the bushes is already turned off.')
                         game_rules(server, dchannel, 'thebushes', '0')
                         pc.notice_(server, username, '[DuckHunt] * Searching the bushes has been turned OFF at: 0%')
                         return
-                    mdata5 = mdata[5].decode()
-                    if mdata5.isnumeric() is False or isinstance(str(mdata5), float) is True:
+                    mdata6 = mdata[6].decode()
+                    if mdata6.isnumeric() is False or isinstance(str(mdata6), float) is True:
                         pc.notice_(server, username, '[DuckHunt] * Invalid request: Searching the bushes value must be an integer.\r\n')
                         return
-                    game_rules(server, channel, 'thebushes', str(data5))
-                    pc.notice_(server, username, '[DuckHunt] * Searching the bushes has been set to ON at: ' + str(data5), + '%.\r\n')
+                    game_rules(server, channel, 'thebushes', str(mdata6))
+                    pc.notice_(server, username, '[DuckHunt] * Searching the bushes has been set to ON at: ' + str(mdata6), + '%.\r\n')
                     return
                 # /msg duckhunt rules gunconf <args> -------------------------------------------------------------------
-                if mdata[4].lower() == b'gunconf':
-                    if mdata[5].lower() == b'on':
+                if mdata[5].lower() == b'gunconf':
+                    if mdata[6].lower() == b'on':
                         if game_rules(server, dchannel, 'gunconf') == 'on':
                             pc.notice_(server, username, '[DuckHunt] * Gun confiscation is already turned on.')
                             return
                         game_rules(server, dchannel, 'gunconf', 'on')
                         pc.notice_(server, username, '[DuckHunt] * Gun confiscation has been turned on.')
                         return
-                    if mdata[5].lower() == b'off':
-                        if game_rules(server, channel, 'gunconf') == 'off':
+                    if mdata[6].lower() == b'off':
+                        if game_rules(server, dchannel, 'gunconf') == 'off':
                             pc.notice_(server, username, '[DuckHunt] * Gun confiscation is already turned off.')
                             return
                         game_rules(server, dchannel, 'gunconf', 'off')
                         pc.notice_(server, username, '[DuckHunt] * Gun confiscation has been turned off.')
                         return
                 # /msg duckhunt rules infammo <args> -------------------------------------------------------------------
-                if mdata[4].lower() == b'infammo':
-                    if mdata[5].lower() == b'on':
+                if mdata[5].lower() == b'infammo':
+                    if mdata[6].lower() == b'on':
                         if game_rules(server, dchannel, 'infammo') == 'on':
                             pc.notice_(server, username, '[DuckHunt] * Infinite ammo is already turned on.')
                             return
                         game_rules(server, dchannel, 'infammo', 'on')
                         pc.notice_(server, username, '[DuckHunt] * Infinite ammo has been turned on.')
                         return
-                    if mdata[5].lower() == b'off':
-                        if game_rules(server, channel, 'infammo') == 'off':
+                    if mdata[6].lower() == b'off':
+                        if game_rules(server, dchannel, 'infammo') == 'off':
                             pc.notice_(server, username, '[DuckHunt] * Infinite ammo is already truend off.')
                             return
                         game_rules(server, dchannel, 'infammo', 'off')
                         pc.notice_(server, username, '[DuckHunt] * Infinite ammo has been turned off.')
                         return
                 # /msg duckhunt rules bang <args> ----------------------------------------------------------------------
-                if mdata[4].lower() == b'bang':
-                    if mdata[5].lower() == b'on':
+                if mdata[5].lower() == b'bang':
+                    if mdata[6].lower() == b'on':
                         if game_rules(server, dchannel, 'bang') == 'on':
                             pc.notice_(server, username, '[DuckHunt] * !bang command set is already enabled.')
                             return
                         game_rules(server, dchannel, 'bang', 'on')
                         pc.notice_(server, username, '[DuckHunt] * !bang command set has been enabled.')
                         return
-                    if mdata[5].lower() == b'off':
+                    if mdata[6].lower() == b'off':
                         if game_rules(server, dchannel, 'bang') == 'off':
                             pc.notice_(server, username, '[DuckHunt] * !bang command set is already disabled.')
                             return
@@ -693,15 +720,15 @@ async def evt_privmsg(server, message):
                         pc.notice_(server, username, '[DuckHunt] * !bang command set has been disabled.')
                         return
                 # /msg duckhunt rules bef <args> -----------------------------------------------------------------------
-                if mdata[4].lower() == b'bef':
-                    if mdata[5].lower() == b'on':
+                if mdata[5].lower() == b'bef':
+                    if mdata[6].lower() == b'on':
                         if game_rules(server, dchannel, 'bef') == 'on':
                             pc.notice_(server, username, '[DuckHunt] * !bef command set is already enabled.')
                             return
                         game_rules(server, dchannel, 'bef', 'on')
                         pc.notice_(server, username, '[DuckHunt] * !bef command set has been enabled.')
                         return
-                    if mdata[5].lower() == b'off':
+                    if mdata[6].lower() == b'off':
                         if game_rules(server, dchannel, 'bef') == 'off':
                             pc.notice_(server, username, '[DuckHunt] * !bef command set is already disabled.')
                             return
@@ -713,8 +740,8 @@ async def evt_privmsg(server, message):
                         return
             # /msg duckhunt rules camping <ducks^time> -------------------------------------------------------------
             # ducks and time must be whole numbers. Time is interpreted in hours
-            if len(mdata) == 7 and mdata[4].lower() == b':camping':
-                val = mdata[5].decode()
+            if len(mdata) == 8 and mdata[5].lower() == b':camping':
+                val = mdata[6].decode()
                 if pc.numtok(val, '^') != 2:
                     pc.notice_(server, username, '[DuckHunt] * Invalid data, value must be in a token: X^Y')
                     return
@@ -764,6 +791,7 @@ async def duckhunt(server, channel, args, ext=''):
 def game_rules(server, channel, rule, args=''):
     global rdata
     chan = channel.replace('#', '')
+    chan = chan.lower()
     rt = 0
     # game_rules('serverid', '#channel', 'msg', 'username')
     if rule == 'msg':
@@ -835,7 +863,7 @@ def game_rules(server, channel, rule, args=''):
             return pc.gettok(rdata[server, chan]['rules'], rt, ',')
     if args != '':
         newdat = pc.reptok(rdata[server, chan]['rules'], rt, ',', str(args))
-        pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'therules', newdat)
+        pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'rules', newdat)
         rdata[server, chan]['rules'] = newdat
         return 1
     return 0
@@ -2956,7 +2984,7 @@ def bang(server, channel, user):
         dinfo = '7?3?7?3,0,0,0,1,200,0^' + str(pc.cputime()) + ',0,75?80?80,0,0,12?12?3?3,0'
         pc.cnfwrite('duckhunt.cnf', server + '_' + chan + '_ducks', duser, str(dinfo))
         if pc.cnfread('duckhunt.cnf', server + '_' + chan + '_ducks', 'cache') == '0':
-            pc.cnfwrite('duckhunt.cnf', dsect, 'cache', '1')  # ???
+            pc.cnfwrite('duckhunt.cnf', server + '_' + chan + '_ducks', 'cache', '1')
 
     # gun is confiscated or player has disarm penalty
     if pc.iistok(rdata[server, chan]['confiscated'], duser, ',') is True or pc.iistok(rdata[server, chan]['disarmed'], duser, ',') is True:
@@ -4401,6 +4429,7 @@ def reloaf(server, channel, user):
         pc.privmsg_(server, channel, user.decode() + ' > \x034You currently have an illegal camping penalty. \x033[Time Remaining: ' + str(timeval) + ']\x03')
         return
 
+    # bread doesn't need to be reloaded (new player)
     if not pc.cnfexists('duckhunt.cnf', server + '_' + chan + '_ducks', duser):
         if game_rules(server, dchannel, 'infammo') == 'on':
             pc.privmsg_(server, channel, user.decode() + " > Your bread doesn't need to be reloaded. | Bread Pieces: 12/12 | Loaf: \x02\x033Inf\x02\x03")
@@ -4428,15 +4457,16 @@ def reloaf(server, channel, user):
             bread = int(mbread)
             duckinfo(server, dchannel, duser, 'bread-l', str(loaf))
             duckinfo(server, dchannel, duser, 'bread-b', str(bread))
-
-        if game_rules(server, dchannel, 'infammo') == 'on':
-            pc.privmsg_(server, channel, user.decode() + ' > \x0314*Shmp..CLICK*\x03     You reload your bread box. | Bread Pieces: ' + str(bread) + '/' + str(mbread) + ' | Loaf: \x02\x033Inf\x02\x03')
-            return
-        if game_rules(server, dchannel, 'infammo') == 'off':
             pc.privmsg_(server, channel, user.decode() + ' > \x0314*Shmp..CLICK*\x03     You reload your bread box. | Bread Pieces: ' + str(bread) + '/' + str(mbread) + ' | Loaf: ' + str(loaf) + '/' + str(mloaf))
             return
 
-    # doesn't need to be reloaded
+        if game_rules(server, dchannel, 'infammo') == 'on':
+            bread = int(mbread)
+            duckinfo(server, dchannel, duser, 'bread-b', str(mbread))
+            pc.privmsg_(server, channel, user.decode() + ' > \x0314*Shmp..CLICK*\x03     You reload your bread box. | Bread Pieces: ' + str(bread) + '/' + str(mbread) + ' | Loaf: \x02\x033Inf\x02\x03')
+            return
+
+    # doesn't need to be reloaded (regular player)
     if int(bread) > 0:
         if game_rules(server, dchannel, 'infammo') == 'on':
             pc.privmsg_(server, channel, user.decode() + " > your bread box doesn't need to be reloaded. | Bread Pieces: " + str(bread) + '/' + str(mbread) + ' | Loaf: \x02\x033Inf\x02\x03')
@@ -4454,7 +4484,6 @@ def reloaf(server, channel, user):
 # rdata[server, chan]['bombed'] = Username1,Username2,Username3,etc
 def duck_bomb(server, channel, user, target):
     global rdata
-
     chan = channel.replace('#', '')
     dsect = server + '_' + chan + '_ducks'
 
@@ -4481,21 +4510,25 @@ def duck_bomb(server, channel, user, target):
         return
 
     # can't bomb the bot
-    if target.lower() == rdata[server, 'botname']:
+    if target.lower() == rdata[server, 'botname'].lower():
         pc.notice_(server, user.encode(), 'Nice try ;-)')
         return
 
+    # target not in channel
+    # mprint(f'TARGET IS ON CHAN: {pc.is_on_chan(server, channel, target.decode())}')
+    # if pc.is_on_chan(server, channel, target.decode()) is False:
+    #    pc.privmsg_(server, channel, target + ' is not in the channel.')
+    #    return
+
     # target hasn't played
-    if pc.cnfexists('duckhunt.cnf', dsect, user) is False:
-        pc.notice_(server, user.encode(), target + " has not played yet.")
+    if pc.cnfexists('duckhunt.cnf', dsect, target) is False:
+        pc.privmsg_(server, channel.encode(), bytes(target + " has not played yet.", 'utf-8'))
         return
 
     # can't bomb yourself
     if target.lower() == user.lower():
         pc.notice_(server, user.encode(), "Don't do that to yourself!")
         return
-
-    # user isn't on the channel -?-?-?-
 
     # target is already bombed
     if pc.iistok(rdata[server, chan]['bombed'], target, ',') is True:
@@ -4633,7 +4666,7 @@ def topduck(server, channel):
     tdmsg = ''
     for x in range(len(datalist)):
         if x > 5:
-            return tdmsg
+            break
         newtok = pc.gettok(datalist[x], 1, '^') + ' ' + pc.gettok(datalist[x], 0, '^')
         if tdmsg == '':
             tdmsg = newtok
@@ -4999,5 +5032,57 @@ def t_stat(server, channel, args, ext=''):
     rdata[server, chan]['top_stat']['totalstat'] = str(top_total[0]) + '^' + str(top_total[1])
     newstatok = rdata[server, chan]['top_stat']['daily'] + ',' + rdata[server, chan]['top_stat']['weekly'] + ',' + rdata[server, chan]['top_stat']['monthly'] + ',' + rdata[server, chan]['top_stat']['totalstat']
     pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'topstat', newstatok)
+    return
+
+# ======================================================================================================================
+# Bot Reset (resets player stats, tshot stats and effects/inventory stats
+# Resets player stats and tshot stats
+def stat_reset(server, channel):
+    global rdata
+
+    parser = RawConfigParser()
+    parser.optionxform = str
+    parser.read('duckhunt.cnf')
+
+    chan = channel.lower()
+    chan = chan.replace('#', '')
+    sect = server + '_' + chan + '_ducks'
+
+    # clear player stats
+    for name, value in parser.items(sect):
+        datkey = '%s' % name
+        mprint(f'{datkey}')
+        pc.cnfdelete('duckhunt.cnf', sect, str(datkey))
+        continue
+    pc.cnfwrite('duckhunt.cnf', sect, 'cache', '0')
+
+    # clear special item and effects storage
+    sect = server + '_' + chan
+    pc.cnfwrite('duckhunt.cnf', sect, 'bedazzled', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'soggy', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'sabotage', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'expl_ammo', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'gun_grease', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'trigger_lock', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'sunglasses', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'silencer', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'lucky_charm', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'accident_insurance', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'rain_coat', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'duck_bomb', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'bread_lock', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'popcorn', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'confiscated', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'disarmed', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'bombed', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'duck_jam', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'jammed', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'camping_permit', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'camp_count', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'illegal_camping', '0')
+    pc.cnfwrite('duckhunt.cnf', sect, 'fatigue', '0')
+
+    # reset tshot
+    pc.cnfwrite('duckhunt.cnf', sect, 'topstat', '0^0,0^0,0^0,0^0')
 
     return
