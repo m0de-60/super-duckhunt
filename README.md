@@ -10,6 +10,8 @@ INCOMPLETE SCRIPT: This is the current ultra beta source code and progress on Su
 
 <H2>VERSION NOTES:</H2>
 
+4-17-2026 Added stats reset function and command, fixed some bugs in !topduck, also made changes in sys_zcore.py for user list storage fix for a bug where DuckHunt is not recognizing users in the channel properly. (zCore update required!)
+
 12-26-2025 Added flood control
 
 10-30-2025 Added functions for top shot, but still need to add the functions in game for the total shot. Updated golden duck structures to have variable xp based on duck HP and misses. Tweaked fatigue values. Next will be to finish total shot and add flood protection and also, fell into the cracks, reset functions. Then i18n.
