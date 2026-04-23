@@ -326,21 +326,25 @@ async def evt_privmsg(server, message):
             # command
             if len(mdata) >= 4:
                 if len(mdata) == 4:
-                    if pc.cnfexists('duckhunt.cnf', dsect, dusername) is False:
+                    # if pc.cnfexists('duckhunt.cnf', dsect, dusername) is False:
+                    if is_player(server, channel, username) is False:
                         pc.privmsg_(server, channel, 'User ' + username.decode() + " has not played yet.")
                         return
-                    # dst = pc.cnfread('duckhunt.cnf', dsect, dusername)
-                    # pc.privmsg_(server, channel, 'TEST DuckStats: ' + username.decode() + ' ' + dst + ' [.]')
                     await duckstats(server, channel, username, username)
                     return
                 if len(mdata) == 5:
                     dsuser = mdata[4].decode()
-                    if pc.cnfexists('duckhunt.cnf', dsect, dsuser) is False:
+                    # checks and corrects case sensativity if specified user is in the channel
+                    if pc.is_on_chan(server, channel, mdata[4]) is True:
+                        dsuser = pc.ul_case(server, channel, mdata[4].decode())
+                    # if pc.cnfexists('duckhunt.cnf', dsect, dsuser) is False:
+                    if is_player(server, channel, mdata[4]) is False:
                         pc.privmsg_(server, channel, 'User ' + dsuser + " has not played yet.")
                         return
-                    # dst = pc.cnfread('duckhunt.cnf', dsect, duser)
-                    # pc.privmsg_(server, channel, 'TEST DuckStats: ' + duser + ' ' + dst + ' [.]')
-                    await duckstats(server, channel, username, mdata[4])
+                    # checks and corrects case sensativity if specified user is not in the channel
+                    dsuser = player_case(server, channel, mdata[4])
+                    mprint(f'Line 346 dsuser: {dsuser}')
+                    await duckstats(server, channel, username, dsuser.encode())
                     return
             return
         # --------------------------------------------------------------------------------------------------------------
@@ -437,8 +441,41 @@ async def evt_privmsg(server, message):
         # ################################################
 
         # --------------------------------------------------------------------------------------------------------------
+        # !release - removes a users illegal camping penalty
+        # ###### needs its own function? ###### #
+        if mdata[3].lower() == b':!release' and pc.is_admin(server, dusername) is True:
+            # increase flood time
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
+
+            # self release (!release) ----------------------------------------------------------------------------------
+            if len(mdata) == 4:
+                if pc.istok_n(rdata[server, chan]['illegal_camping'], dusername, ',', '^', 0) is False:
+                    pc.privmsg_(server, channel, username.decode() + ' > You do not have an illegal camping penalty.')
+                    return
+                time_data(server, channel, dusername, 'illegal_camping', 'rem')
+                pc.privmsg_(server, channel, username.decode() + "'s illegal camping penalty has been lifted. Buy a camping permit next time! \x034[By order of: " + dusername + ']\x03')
+                return
+
+        # !release username and !release all ---------------------------------------------------------------------------
+            if len(mdata) == 5:
+                if mdata[4] == b'all':
+                    time_data(server, dchannel, '0', 'illegal_camping', 'clear', '0')
+                    pc.privmsg_(server, channel, '\x01ACTION releases all hunters illegal camping penalties. Buy a camping permit next time! \x034[By order of: ' + username.decode() + ']\x03')
+                    return
+                if pc.is_on_chan(server, channel, mdata[4]) is False:
+                    pc.privmsg_(server, channel, mdata[4].decode() + ' is not in the channel.')
+                    return
+                duser = pc.ul_case(server, channel, mdata[4].decode())
+                if pc.istok_n(rdata[server, chan]['illegal_camping'], duser, ',', '^', '0') is False:
+                    pc.privmsg_(server, channel, duser + ' does not have an illegal camping penalty.')
+                    return
+                time_data(server, channel, duser, 'illegal_camping', 'rem')
+                pc.privmsg_(server, channel, duser + "'s illegal camping penalty has been lifted. Buy a camping permit next time! \x034[By order of: " + dusername + ']\x03')
+                return
+
+        # --------------------------------------------------------------------------------------------------------------
         # !rearm
-        # ###### needs its own function ###### #
+        # ###### needs its own function? ###### #
         if mdata[3].lower() == b':!rearm' and pc.is_admin(server, dusername) is True:
             # increase flood time
             rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
@@ -460,17 +497,18 @@ async def evt_privmsg(server, message):
                     ctrl_data(server, dchannel, dusername, 'confiscated', 'clear')
                     pc.privmsg_(server, channel, '\x01ACTION returns all confiscated guns to the hunters.\x01')
                     return
-                duser = mdata[4].decode()
+                # duser = mdata[4].decode()
                 # duser = duser.lower()
                 if pc.is_on_chan(server, channel, mdata[4]) is False:
                     pc.privmsg_(server, channel, mdata[4].decode() + ' is not in the channel.')
                     return
+                duser = pc.ul_case(server, channel, mdata[4].decode())
                 if pc.iistok(rdata[server, chan]['confiscated'], duser, ',') is False:
-                    pc.privmsg_(server, channel, mdata[4].decode() + "'s gun is not confiscated.")
+                    pc.privmsg_(server, channel, duser + "'s gun is not confiscated.")
                     return
                 if pc.iistok(rdata[server, chan]['confiscated'], duser, ',') is True:
                     ctrl_data(server, dchannel, duser, 'confiscated', 'rem')
-                    pc.privmsg_(server, channel, '\x01ACTION returns ' + mdata[4].decode() + "'s gun.\x01")
+                    pc.privmsg_(server, channel, '\x01ACTION returns ' + duser + "'s gun.\x01")
                     return
             # print(f'Rearm!')
             # pc.privmsg_(server, channel, 'Rearm!')
@@ -489,8 +527,7 @@ async def evt_privmsg(server, message):
                 if pc.is_on_chan(server, channel, mdata[4]) is False:
                     pc.privmsg_(server, channel, mdata[4].decode() + ' is not in the channel.')
                     return
-                duser = mdata[4].decode()
-                # duser = duser.lower()
+                duser = pc.ul_case(server, channel, mdata[4].decode())
                 if duser == dusername:
                     pc.notice_(server, username, "Don't do that to yourself!")
                     return
@@ -498,10 +535,10 @@ async def evt_privmsg(server, message):
                     pc.notice_(server, username, 'Nice try ;-)')
                     return
                 if pc.iistok(rdata[server, chan]['confiscated'], duser, ',') is True:
-                    pc.privmsg_(server, channel, mdata[4].decode() + "'s gun is already confiscated.")
+                    pc.privmsg_(server, channel, duser + "'s gun is already confiscated.")
                     return
                 ctrl_data(server, dchannel, duser, 'confiscated', 'add')
-                pc.privmsg_(server, channel, '\x01ACTION > frisks ' + mdata[4].decode() + ' and confiscates the gun.     \x034[GUN CONFISCATED: By order of ' + username.decode() + ']\x03')
+                pc.privmsg_(server, channel, '\x01ACTION > frisks ' + duser + ' and confiscates the gun.     \x034[GUN CONFISCATED: By order of ' + username.decode() + ']\x03')
             # print(f'Disarm!')
             # pc.privmsg_(server, channel, 'Disarm!')
             return
@@ -1496,6 +1533,13 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                     continue
             return
 
+    # time_data('serverid', '#channel', '0', 'effect name', 'clear', '0')
+    # Clears the specified list
+    if args == 'clear':
+        rdata[server, chan][eff_name] = '0'
+        pc.cnfwrite('duckhunt.cnf', server + '_' + chan, eff_name, '0')
+        return
+
     # time_data('serverid', '#channel', 'username', 'effect name', 'add', <data='new data'>)
     # Adds data to rdata[server, chan][eff_name] and overwrites/updates previous existing data
     if args == 'add':
@@ -1538,7 +1582,7 @@ def time_data(server, channel, user, eff_name, args='', data=''):
             if rdata[server, chan][eff_name] != '0':
                 token = rdata[server, chan][eff_name] + ',' + user
             if rdata[server, chan][eff_name] == '0':
-                 token = user
+                token = user
             pc.cnfwrite('duckhunt.cnf', server + '_' + chan, eff_name, token)
             rdata[server, chan][eff_name] = token
             return
@@ -1694,16 +1738,6 @@ def duckinfo(server, channel, user, req, data=''):
             return 1
 
     # Player stats info ------------------------------------------------------------------------------------------------
-
-    # TO BE DELETED. See ammo-r/-mr/-m/-mm
-    # if req == 'ammo':
-    #    if data == '':
-    #        return pc.gettok(cnfdat, 0, ',')
-    #    else:
-    #        duck_info = pc.reptok(cnfdat, 0, ',', str(data))
-    #        pc.cnfwrite('duckhunt.cnf', sect, userl, duck_info)
-    #        return 1
-
     if req == 'ducks':
         if data == '':
             return pc.gettok(cnfdat, 1, ',')
@@ -1949,7 +1983,10 @@ async def duckstats(server, channel, user, ruser, ext=''):
     dchannel = channel.decode()
     dchannel = dchannel.lower()
     duser = user.decode()
-    druser = ruser.decode()
+    try:
+        druser = ruser.decode()
+    except TypeError:
+        druser = ruser
 
     chan = str(dchannel.replace('#', '')).lower()
 
@@ -1979,7 +2016,7 @@ async def duckstats(server, channel, user, ruser, ext=''):
     fatigue = int(pc.gettok(fatigue, 0, '^'))
     if fatigue <= 25:
         fatigue = '\x033,1 ' + str(fatigue) + '%'
-    elif fatigue > 25 and fatigue <= 70:
+    elif 25 < fatigue <= 70:
         fatigue = '\x038,1 ' + str(fatigue) + '%'
     elif fatigue > 70:
         fatigue = '\x034,1 ' + str(fatigue) + '%'
@@ -1992,12 +2029,12 @@ async def duckstats(server, channel, user, ruser, ext=''):
     gunbox = ''
     breadbox = ''
 
-    if float(reliability) <= 65:
-        gunstatus = b'Needs cleaning'
+    if pc.istok(rdata[server, chan]['confiscated'], druser, ',') is True and game_rules(server, dchannel, 'gunconf') == 'on':
+        gunstatus = b'Confiscated'
     elif pc.istok(rdata[server, chan]['jammed'], druser, ',') is True:
         gunstatus = b'Jammed'
-    elif pc.istok(rdata[server, chan]['confiscated'], druser, ',') is True and game_rules(server, dchannel, 'gunconf') == 'on':
-        gunstatus = b'Confiscated'
+    elif float(reliability) <= 65:
+        gunstatus = b'Needs cleaning'
     else:
         gunstatus = b'OK'
 
@@ -2340,6 +2377,7 @@ async def shop(server, channel, user, itemid, target=''):
     dtarget = ''
     if target != '':
         dtarget = target.decode()
+        dtarget = pc.ul_case(server, channel, dtarget)
         # dtarget = dtarget.lower()
 
     # check for expired item entries in player inventory
@@ -2368,10 +2406,6 @@ async def shop(server, channel, user, itemid, target=''):
         return
     # if a target is specified -------------------------------------------------------------------------------------
     if target != '':
-        # target not on channel -----------------------------------------------------------------------------------
-        if pc.is_on_chan(server, channel, target) is False:
-            pc.privmsg_(server, channel, target.decode() + ' is not in the channel.')
-            return
         # targeted item checks ------------------------------------------------------------------------------------------
         if int(itemid) == 14 or int(itemid) == 15 or int(itemid) == 16 or int(itemid) == 17:
             if game_rules(server, dchannel, 'bang') == 'off':
@@ -2385,6 +2419,10 @@ async def shop(server, channel, user, itemid, target=''):
             # can't use it on the bot ----------------------------------------------------------------------------------
             if dtarget.lower() == rdata[server, 'botname'].lower():
                 pc.notice_(server, user, 'Nice try ;-)')
+                return
+            # target not on channel -----------------------------------------------------------------------------------
+            if pc.is_on_chan(server, channel, target) is False:
+                pc.privmsg_(server, channel, target.decode() + ' is not in the channel.')
                 return
             # target hasnt played yet ----------------------------------------------------------------------------------
             if pc.cnfexists('duckhunt.cnf', dsect, dtarget) is False:
@@ -2652,18 +2690,18 @@ async def shop(server, channel, user, itemid, target=''):
             return
         # target already bedazzled
         if pc.istok_n(rdata[server, chan]['bedazzled'], dtarget, ',', '^', 0) is True:
-            pc.notice_(server, user, target.decode() + ' is already bedazzled.')
+            pc.privmsg_(server, channel, dtarget + ' is already bedazzled.')
             return
         # purchase
         xp = int(xp) - shopprice(server, channel, user, 14)
         duckinfo(server, dchannel, duser, 'xp', str(xp))
         # target wearing sunglasses!
         if pc.istok_n(rdata[server, chan]['sunglasses'], dtarget, ',', '^', 0) is True:
-            pc.privmsg_(server, channel, user.decode() + ' > Bedazzles ' + target.decode() + ', with a mirror, but ' + target.decode() + ' is wearing sunglasses so the mirror has no effect.')
+            pc.privmsg_(server, channel, user.decode() + ' > Bedazzles ' + dtarget + ', with a mirror, but ' + dtarget + ' is wearing sunglasses so the mirror has no effect.')
             return
         # target is bedazzled
         time_data(server, channel, dtarget, 'bedazzled', 'add')
-        pc.privmsg_(server, channel, user.decode() + ' > Bedazzles ' + target.decode() + ' with a mirror, who is now blinded for 1 hour.')
+        pc.privmsg_(server, channel, user.decode() + ' > Bedazzles ' + dtarget + ' with a mirror, who is now blinded for 1 hour.')
         return
     # 15 - handful of sand --------------------------------------------------------------------------------------
     if int(itemid) == 15:
@@ -2672,7 +2710,7 @@ async def shop(server, channel, user, itemid, target=''):
             return
         # rules disabled
         if game_rules(server, dchannel, 'bang') == 'off':
-            pc.notice_(server, user, 'Based on current game rules, this item is not available.')
+            pc.privmsg_(server, channel, 'Based on current game rules, this item is not available.')
             return
         # purchase
         xp = int(xp) - shopprice(server, channel, user, 15)
@@ -2688,7 +2726,7 @@ async def shop(server, channel, user, itemid, target=''):
             trel = float(trel) - 5
         tgunstats = str(tacc) + '?' + str(trel) + '?' + str(tmrel)
         duckinfo(server, dchannel, dtarget, 'guninfo', tgunstats)
-        pc.privmsg_(server, channel, user.decode() + ' > Pours a handful of sand into ' + target.decode() + "'s gun, reducing its reliability by 5%.")
+        pc.privmsg_(server, channel, user.decode() + ' > Pours a handful of sand into ' + dtarget + "'s gun, reducing its reliability by 5%.")
         return
     # 16 - water bucket -------------------------------------------------------------------------------------------
     if int(itemid) == 16:
@@ -2697,18 +2735,18 @@ async def shop(server, channel, user, itemid, target=''):
             return
         # target is already soggy
         if pc.istok_n(rdata[server, chan]['soggy'], dtarget, ',', '^', 0) is True:
-            pc.notice_(server, user, target.decode() + ' is already soggy.')
+            pc.privmsg_(server, channel, dtarget + ' is already soggy.')
             return
         # purchase
         xp = int(xp) - shopprice(server, channel, user, 16)
         duckinfo(server, dchannel, duser, 'xp', str(xp))
         # target has a rain coat
         if pc.istok_n(rdata[server, chan]['rain_coat'], dtarget, ',', '^', 0) is True:
-            pc.privmsg_(server, channel, user.decode() + ' > Dumps a bucket of water on ' + target.decode() + ', but thanks to a rain coat, ' + target.decode() + ' is protected from being soggy.')
+            pc.privmsg_(server, channel, user.decode() + ' > Dumps a bucket of water on ' + dtarget + ', but thanks to a rain coat, ' + dtarget + ' is protected from being soggy.')
             return
         # target is soggy
         time_data(server, channel, dtarget, 'soggy', 'add')
-        pc.privmsg_(server, channel, user.decode() + ' > Dumps a bucket of water on ' + target.decode() + '. ' + target.decode() + ' is now soggy for 1 hour.')
+        pc.privmsg_(server, channel, user.decode() + ' > Dumps a bucket of water on ' + dtarget + '. ' + dtarget + ' is now soggy for 1 hour.')
         return
     # 17 - sabotage ------------------------------------------------------------------------------------------
     if int(itemid) == 17:
@@ -2717,18 +2755,18 @@ async def shop(server, channel, user, itemid, target=''):
             return
         # rules disabled
         if game_rules(server, dchannel, 'bang') == 'off':
-            pc.notice_(server, user, 'Based on current game rules, this item is not available.')
+            pc.privmsg_(server, channel, 'Based on current game rules, this item is not available.')
             return
         # target is already sabotaged
         if pc.istok_n(rdata[server, chan]['sabotage'], dtarget, ',', '^', 0) is True:
-            pc.notice_(server, channel, target.decode() + "'s gun is already sabotaged.")
+            pc.privmsg_(server, channel, dtarget + "'s gun is already sabotaged.")
             return
         # purchase
         xp = int(xp) - shopprice(server, channel, user, 17)
         duckinfo(server, dchannel, duser, 'xp', str(xp))
         # target is sabotaged
         time_data(server, channel, dtarget, 'sabotage', 'add')
-        pc.privmsg_(server, channel, user.decode() + ' > Sabotages the gun while ' + target.decode() + " isn't looking.")
+        pc.privmsg_(server, channel, user.decode() + ' > Sabotages the gun while ' + dtarget + " isn't looking.")
         return
     # 18 - accident insurance ------------------------------------------------------------------------------------
     if int(itemid) == 18:
@@ -3030,7 +3068,7 @@ def bang(server, channel, user):
     # add duck exists to this statement
     if pc.iistok(rdata[server, chan]['sabotage'], duser, ',') is True and pc.istok_n(rdata[server, chan]['trigger_lock'], duser, ',', '^', 0) is False:
         time_data(server, channel, duser, 'sabotage', 'rem')
-        pc.privmsg_(server, channel, "Sabotaged")
+        pc.privmsg_(server, channel, user.decode() + ' > \x0314*CLICK PFFFFT*\x03     \x034Your gun was sabotaged.\x03')
         return
 
     # shooting data
@@ -5086,3 +5124,50 @@ def stat_reset(server, channel):
     pc.cnfwrite('duckhunt.cnf', sect, 'topstat', '0^0,0^0,0^0,0^0')
 
     return
+
+# ======================================================================================================================
+# Case Sensativity Stuff (fix for errors in the game when usernames are typed correctly but with wrong letter case)
+# ----------------------------------------------------------------------------------------------------------------------
+# player_case('serverid', '#channel', 'player_name')
+# corrects case sensativity for a specified player name, player name must exist or will return 'err' (see: is_player())
+def player_case(server, channel, user):
+    parser = RawConfigParser()
+    parser.optionxform = str
+    parser.read('duckhunt.cnf')
+    chan = channel.decode()
+    chan = chan.replace('#', '')
+    chan = chan.lower()
+    duser = user.decode()
+    section = server + '_' + chan + '_ducks'
+    for name, value in parser.items(section):
+        datkey = '%s' % name
+        if datkey == 'cache':
+            continue
+        if datkey.lower() == duser.lower():
+            return datkey
+        continue
+    return 'err'
+
+# ----------------------------------------------------------------------------------------------------------------------
+# is_player('serverid', b'#channel', b'player_name')
+# determines if player exists even if case sensativity does not match
+def is_player(server, channel, user):
+    chan = channel.decode()
+    chan = chan.replace('#', '')
+    chan = chan.lower()
+    duser = user.decode()
+    section = server + '_' + chan + '_ducks'
+
+    if pc.cnfexists('duckhunt.cnf', section, duser) is True:
+        return True
+
+    else:
+        parser = RawConfigParser()
+        parser.optionxform = str
+        parser.read('duckhunt.cnf')
+        for name, value in parser.items(section):
+            datkey = '%s' % name
+            if datkey.lower() == duser.lower():
+                return True
+            continue
+        return False
