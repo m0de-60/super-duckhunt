@@ -10,6 +10,8 @@ INCOMPLETE SCRIPT: This is the current ultra beta source code and progress on Su
 
 <H2>VERSION NOTES:</H2>
 
+4-23-2026 More bug fixes, also added new command ' !release ' for bot masters/admins to use to release their own or a player's illegal camping penalty free of charge. Also fixed bugs in sys_zcore relative to duckhunt problems, this also requires another zCore update.
+
 4-17-2026 Added stats reset function and command, fixed some bugs in !topduck, also made changes in sys_zcore.py for user list storage fix for a bug where DuckHunt is not recognizing users in the channel properly. (zCore update required!)
 
 12-26-2025 Added flood control
