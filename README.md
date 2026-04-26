@@ -10,6 +10,8 @@ INCOMPLETE SCRIPT: This is the current ultra beta source code and progress on Su
 
 <H2>VERSION NOTES:</H2>
 
+4-26-2026 Finished on-the-fly configuration, allowing botmasters to change core configuration through bot ' /msg duckhunt ' commands while the bot is running, similar to what is found in 1.1.4. Added !help and !about as well. Fixed bug in rules configuration that wasn't allowing camping permits to be changed. 
+
 4-25-2026 Finished !tshot stuff, "total stats" is now the new name. Includes totals, daily, weekly and monthly statistics for shot ducks and fed (befriended) ducks. Added command ' /msg duckhunt boost #channel player ' from 1.1.4, for bot masters/admins to use to boost a player who is stuck with no ammo/bread and not enough xp to buy more ammo/bread.
 
 4-23-2026 More bug fixes, also added new command ' !release ' for bot masters/admins to use to release their own or a player's illegal camping penalty free of charge. Also fixed bugs in sys_zcore relative to duckhunt problems, this also requires another zCore update.
