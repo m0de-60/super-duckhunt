@@ -122,6 +122,12 @@ def plugin_init_():
             rdata[server, chan]['fatigue'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'fatigue')
             rdata[server, chan]['fatigue_point'] = 0
             rdata[server, chan]['fear_factor'] = False  # do not change
+            # time and date keeping
+            rdata[server, chan]['hour'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'hour')
+            rdata[server, chan]['day'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'day')
+            rdata[server, chan]['week'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'week')
+            rdata[server, chan]['month'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'month')
+            rdata[server, chan]['year'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'year')
             # top shot statistics
             rdata[server, chan]['top_stat'] = {}
             t_shot = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'topstat')
@@ -129,9 +135,6 @@ def plugin_init_():
             rdata[server, chan]['top_stat']['weekly'] = pc.gettok(t_shot, 1, ',')
             rdata[server, chan]['top_stat']['monthly'] = pc.gettok(t_shot, 2, ',')
             rdata[server, chan]['top_stat']['totalstat'] = pc.gettok(t_shot, 3, ',')
-            rdata[server, chan]['top_stat']['day'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'tday')
-            rdata[server, chan]['top_stat']['week'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'tweek')
-            rdata[server, chan]['top_stat']['month'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'tmonth')
             # flood protection values
             rdata[server, chan]['flood_check'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'floodcheck')
             rdata[server, chan]['flood'] = 0
@@ -226,15 +229,15 @@ async def evt_privmsg(server, message):
     chan = dchannel.replace('#', '')
     sect = server + '_' + chan
     dsect = server + '_' + chan + '_ducks'
-    # botmaster controls
-    if b'#' in channel and pc.is_botmaster(dusername) is True:
-
-        # /privmsg botname boost <player> (player boost)
-        if mdata[3].lower() == b':boost' and len(mdata) > 4:
-            dsuser = mdata[4].decode()
-            if pc.cnfexists('duckhunt.cnf', dsect, dsuser) is False:
-                pc.notice_(server, channel, 'User ' + dsuser + " has not played yet.")
-                return
+    # botmaster controls OLD DELETE
+    # if b'#' in channel and pc.is_botmaster(dusername) is True:
+    #
+    #    # /privmsg botname boost <player> (player boost)
+    #    if mdata[3].lower() == b':boost' and len(mdata) > 4:
+    #        dsuser = mdata[4].decode()
+    #        if pc.cnfexists('duckhunt.cnf', dsect, dsuser) is False:
+    #            pc.notice_(server, channel, 'User ' + dsuser + " has not played yet.")
+    #            return
 
     # admin controls
     if b'#' in channel and pc.is_admin(server, dusername) is True:
@@ -580,15 +583,37 @@ async def evt_privmsg(server, message):
             game_rules(server, dchannel, 'msg', dusername)
             return
 
-        # --------------------------------------------------------------------------------------------------------------
+        # Channel statistics commands ----------------------------------------------------------------------------------
         # !tshot
-        if mdata[3].lower() == b':!tshot':
+        if mdata[3].lower() == b':!tshot' or mdata[3].lower() == b':!totals':
             # increase flood time
             rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
-            # send total shot message
-            pc.privmsg_(server, channel, 'Total Shot!')
+            tstat(server, channel, 'total')
             return
 
+        # --------------------------------------------------------------------------------------------------------------
+        # !daily
+        if mdata[3].lower() == b':!daily':
+            # increase flood time
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
+            tstat(server, channel, 'daily')
+            return
+
+        # --------------------------------------------------------------------------------------------------------------
+        # !weekly
+        if mdata[3].lower() == b':!weekly':
+            # increase flood time
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
+            tstat(server, channel, 'weekly')
+            return
+
+        # --------------------------------------------------------------------------------------------------------------
+        # !monthly
+        if mdata[3].lower() == b':!monthly':
+            # increase flood time
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
+            tstat(server, channel, 'monthly')
+            return
         return
         # --------------------------------------------------------------------------------------------------------------
 
@@ -641,6 +666,58 @@ async def evt_privmsg(server, message):
                         return
                 else:
                     return 0
+        # --------------------------------------------------------------------------------------------------------------
+        # /msg duckhunt duckstats #channel player
+        if mdata[3].lower() == b':duckstats' and pc.is_admin(server, dusername) is True:
+            if len(mdata) == 4:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Use: /msg ' + rdata[server, 'botname'] + ' duckstats <channel> OR /msg ' + rdata[server, 'botname'] + ' duckstats <channel> <player name>')
+                return
+            if len(mdata) >= 5:
+                if b'#' not in mdata[4]:
+                    pc.notice_(server, username, '[DuckHunt] * Invalid request. Channel name must contain a hash "#channel"')
+                    return
+                chan = mdata[4].decode()
+                chan = chan.lower()
+                if pc.istok(rdata[server, 'channels'], chan, ',') is False:
+                    pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
+                    return
+                if len(mdata) == 5:
+                    if is_player(server, mdata[4].lower(), username) is False:
+                        pc.notice_(server, username, "[DuckHunt] * You haven't played yet.")
+                        return
+                    await duckstats(server, mdata[4].lower(), username, username)
+                    return
+                if len(mdata) > 5:
+                    if is_player(server, mdata[4].lower(), mdata[5]) is False:
+                        pc.notice_(server, username, "[DuckHunt] * " + mdata[5].decode() + " hasn't played yet.")
+                        return
+                    pusername = player_case(server, mdata[4], mdata[5])
+                    await duckstats(server, mdata[4].lower(), username, pusername.encode())
+                    return
+                return
+        # --------------------------------------------------------------------------------------------------------------
+        # /msg duckhunt boost #channel player
+        if mdata[3].lower() == b':boost' and pc.is_admin(server, dusername) is True:
+            if len(mdata) != 6:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Use: /msg ' + rdata[server, 'botname'] + ' boost <channel> <player name>')
+                return
+            if b'#' not in mdata[4]:
+                pc.notice_(server, username, '[DuckHunt] * Invalid request. Channel name must contain a hash "#channel"')
+                return
+            chan = mdata[4].decode()
+            chan = chan.lower()
+            if pc.istok(rdata[server, 'channels'], chan, ',') is False:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
+                return
+            if pc.is_on_chan(server, mdata[4], mdata[5]) is False:
+                pc.notice_(server, username, '[DuckHunt] * ' + mdata[5].decode() + ' is not in the channel.')
+                return
+            if is_player(server, mdata[4].lower(), mdata[5]) is False:
+                pc.notice_(server, username, '[DuckHunt] * ' + mdata[5].decode() + " hasn't played yet.")
+                return
+            pusername = player_case(server, mdata[4], mdata[5])
+            player_boost(server, mdata[4].lower(), pusername)
+            return
         # --------------------------------------------------------------------------------------------------------------
         # /msg duckhunt reset #channel
         if mdata[3].lower() == b':reset' and pc.is_botmaster(dusername) is True:
@@ -905,7 +982,7 @@ def game_rules(server, channel, rule, args=''):
         return 1
     return 0
 
-# Duck timer and loop ==================================================================================================
+# Duck timer and 'main' loop ===========================================================================================
 # ducktimer('serverid', '#channel')
 def ducktimer(server, channel):
     global rdata
@@ -917,7 +994,49 @@ def ducktimer(server, channel):
         if rdata[server, chan]['duckhunt'] is False:
             break
 
-        # Check total shot timers and days for changes etc
+        # Check total shot timers and hour/day/week/month for changes etc
+        # New hour
+        if str(pc.chour()) != rdata[server, chan]['hour']:
+            mprint(f"It's a new hour!")
+            rdata[server, chan]['hour'] = str(pc.chour())
+            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'hour', str(pc.chour()))
+            # reset hourly stats
+
+        # New day
+        if str(pc.cday()) != rdata[server, chan]['day']:
+            mprint(f"It's a new day!")
+            rdata[server, chan]['day'] = str(pc.cday())
+            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'day', str(pc.cday()))
+            # reset daily stats
+            t_day = rdata[server, chan]['top_stat']['daily'].split('^')
+            pc.privmsg_(server, channel.encode(), "It's a new day! Stats yesterday: [Ducks Shot: " + str(t_day[0]) + "][Ducks Befriended: " + str(t_day[1]) + "] Daily stats have been reset for a new day!")
+            t_stat(server, channel, 'reset', 'day')
+
+        # New week
+        if str(pc.cweek()) != rdata[server, chan]['week']:
+            mprint(f"It's a new week!")
+            rdata[server, chan]['week'] = str(pc.cweek())
+            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'week', str(pc.cweek()))
+            # reset weekly stats
+            t_week = rdata[server, chan]['top_stat']['weekly'].split('^')
+            pc.privmsg_(server, channel.encode(), "It's a new week! Stats last week: [Ducks Shot: " + str(t_week[0]) + "][Ducks Befriended: " + str(t_week[1]) + "] Weekly stats have been reset for a new day!")
+            t_stat(server, channel, 'reset', 'week')
+
+        # New Month
+        if str(pc.cmonth()) != rdata[server, chan]['month']:
+            mprint(f"It's a new month!")
+            rdata[server, chan]['month'] = str(pc.cmonth())
+            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'month', str(pc.cmonth()))
+            # reset monthly stats
+            t_month = rdata[server, chan]['top_stat']['monthly'].split('^')
+            pc.privmsg_(server, channel.encode(), "It's a new month! Stats last month: [Ducks Shot: " + str(t_month[0]) + "][Ducks Befriended: " + str(t_month[1]) + "] Monthly stats have been reset for a new month!")
+            t_stat(server, channel, 'reset', 'month')
+
+        if str(pc.cyear()) != rdata[server, chan]['year']:
+            mprint(f"It's a new year!")
+            rdata[server, chan]['year'] = str(pc.cyear())
+            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'year', str(pc.cyear()))
+            # reset yearly stats
 
         # check flood timers here
         if rdata[server, chan]['flood_check'] == 'on':
@@ -3515,8 +3634,8 @@ def bang(server, channel, user):
             # normal ducks
             if pc.gettok(duckdata, 1, ',') == 'normal':
 
-                # top shot counter
-                # tshotplus(server, dchannel)
+                # top stat counter add one shot
+                t_stat(server, channel.decode(), 'add-bang')
 
                 # player reaction time determination
                 reacttime = round(pc.cputime() - float(duck_time), 2)
@@ -3642,7 +3761,8 @@ def bang(server, channel, user):
 
                 if int(duckhp) == 1 or expl is True:
 
-                    # TOP SHOT COUNTER TO BE ADDED HERE
+                    # top stat counter add one shot
+                    t_stat(server, channel.decode(), 'add-bang')
 
                     if expl is True:
                         expl = False
@@ -4148,8 +4268,8 @@ def bef(server, channel, user):
                 break
 
         # determine friend or not
-        friendornot = pc.rand(1, 100)
         # normal duck
+        friendornot = pc.rand(1, 100)
 
         # normal-gold duck
         if pc.gettok(duckdata, 1, ',') == 'gold':
@@ -4227,6 +4347,9 @@ def bef(server, channel, user):
             # normal duck
             # mprint(f'Normal Duck Friend -----------------------------')
             if pc.gettok(duckdata, 1, ',') == 'normal':
+
+                # top stat counter add one friend
+                t_stat(server, channel.decode(), 'add-bef')
 
                 # reaction time
                 reacttime = round(pc.cputime() - float(duck_time), 2)
@@ -4373,6 +4496,9 @@ def bef(server, channel, user):
                     # increase friends
                     friend = int(friend) + 1
                     duckinfo(server, dchannel, duser, 'friend', str(friend))
+
+                    # top stat counter add one friend
+                    t_stat(server, channel.decode(), 'add-bef')
 
                     # increase xp - lucky charm
                     if pc.istok_n(rdata[server, chan]['lucky_charm'], duser, ',', '^', 0) is True:
@@ -5008,27 +5134,44 @@ def user_data(server, channel, user, dataname, args, data=''):
 
 # !tstat (or !tshot), !t_day, !t_week, !t_month -----------------------------------------------------------------------
 # tstat('server', '#channel', <daily,weekly,monthly,total>)
-# def tstat(server, channel, args=''):
-#    global rdata
-#    chan = channel.replace('#', '')
-#
-#    # !tstat or !tshot
-#    if args == 'total':
-#
-#    # !t_day
-#    if args == 'daily':
-#
-#    # !t_week
-#    if args == 'weekly':
-#
-#    # !t_month
-#    if args == 'monthly':
+def tstat(server, channel, args=''):
+    global rdata
+    chan = channel.decode()
+    chan = chan.replace('#', '')
+    chan = chan.lower()
+
+    top_day = rdata[server, chan]['top_stat']['daily'].split('^')
+    top_week = rdata[server, chan]['top_stat']['weekly'].split('^')
+    top_month = rdata[server, chan]['top_stat']['monthly'].split('^')
+    top_total = rdata[server, chan]['top_stat']['totalstat'].split('^')
+
+    # !tstat or !tshot
+    if args == 'total':
+        pc.privmsg_(server, channel, "\x033[Super DuckHunt] " + channel.decode() + " total statistics:\x034 Today:\x037 " + top_day[0] + " shot | " + top_day[1] + " fed\x034 This week:\x037 " + top_week[0] + " shot | " + top_week[1] + " fed\x034 This month:\x037 " + top_month[0] + " shot | " + top_month[1] + " fed\x034 Since last reset:\x037 " + top_total[0] + " shot | " + top_total[1] + " fed\x03")
+        return
+
+    # !daily
+    if args == 'daily':
+        pc.privmsg_(server, channel, "\x033[Super DuckHunt] " + channel.decode() + " daily statistics:\x037 " + top_day[0] + " shot | " + top_day[1] + " fed\x03")
+        return
+
+    # !weekly
+    if args == 'weekly':
+        pc.privmsg_(server, channel, "\x033[Super DuckHunt] " + channel.decode() + " weekly statistics:\x037 " + top_week[0] + " shot | " + top_week[1] + " fed\x03")
+        return
+
+    # !monthly
+    if args == 'monthly':
+        pc.privmsg_(server, channel, "\x033[Super DuckHunt] " + channel.decode() + " monthly statistics:\x037 " + top_month[0] + " shot | " + top_month[1] + " fed\x03")
+        return
+    return
 
 # t_stat counter and reset control, adds statistics and resets data ----------------------------------------------------
 # t_stat('server', '#channel', <add-bang,add-bef,reset>, <day,week,month,total>)
 def t_stat(server, channel, args, ext=''):
     global rdata
     chan = channel.replace('#', '')
+    chan = chan.lower()
 
     top_day = rdata[server, chan]['top_stat']['daily'].split('^')
     top_week = rdata[server, chan]['top_stat']['weekly'].split('^')
@@ -5171,3 +5314,28 @@ def is_player(server, channel, user):
                 return True
             continue
         return False
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Player boost function for admins to use on players who get stuck with low xp and unable to buy ammo/bread
+# player_boost('serverid', b'#channel', 'player_name')
+def player_boost(server, channel, player):
+    global rdata
+
+    dchannel = channel.decode()
+    chan = dchannel.replace('#', '')
+    chan = chan.lower()
+
+    if game_rules(server, dchannel, 'bang') == 'on':
+        duckinfo(server, dchannel, player, 'ammo-r', '7')
+        duckinfo(server, dchannel, player, 'ammo-m', '3')
+
+    if game_rules(server, dchannel, 'bef') == 'on':
+        duckinfo(server, dchannel, player, 'bread-b', '12')
+        duckinfo(server, dchannel, player, 'bread-l', '3')
+        loaf = 3
+
+    xp = int(duckinfo(server, dchannel, player, 'xp'))
+    xp = xp + 100
+    duckinfo(server, dchannel, player, 'xp', str(xp))
+    pc.privmsg_(server, channel, player + ' > Received a boost from the admins!    \x033[BOOST: +100 xp]\x03')
+    return
