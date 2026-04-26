@@ -8,7 +8,7 @@ Multi-threaded and asyncronous, better and faster, ported from the standalone v1
 
 INCOMPLETE SCRIPT: This is the current ultra beta source code and progress on Super DuckHunt v1.9.9 which is a zCore port of v1.1.4
 
-<H2>VERSION NOTES:</H2>
+<H2>VERSION & DEVELOPMENT NOTES:</H2>
 
 4-26-2026 Finished on-the-fly configuration, allowing botmasters to change core configuration through bot ' /msg duckhunt ' commands while the bot is running, similar to what is found in 1.1.4. Added !help and !about as well. Fixed bug in rules configuration that wasn't allowing camping permits to be changed. 
 
