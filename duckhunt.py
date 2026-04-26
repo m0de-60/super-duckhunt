@@ -63,7 +63,8 @@ def plugin_init_():
 
     rdata['ptitle'] = 'Super DuckHunt'
     rdata['pversion'] = '1.9.9'  # This is v1.1.4 ported to zCore, the prototype for 2.0.0
-    rdata['pauthor'] = 'Mode60'
+    rdata['pauthor'] = 'Mode60/Neo_Nemesis'
+    rdata['pweb'] = 'https://github.com/m0de-60/super-duckhunt'
     rdata['mreqver'] = '0.1x'
     rdata['moduleprint'] = True
     rdata['serverlist'] = pc.cnfread('duckhunt.cnf', 'duckhunt', 'serverlist').lower()
@@ -434,14 +435,12 @@ async def evt_privmsg(server, message):
 
         # --------------------------------------------------------------------------------------------------------------
         # !lastduck
-        # ################################### NOT FINISHED
         if mdata[3].lower() == b':!lastduck':
             # increase flood time
             rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
             # pc.privmsg_(server, channel, 'LastDuck!')
             last_duck(server, dchannel, dusername)
             return
-        # ################################################
 
         # --------------------------------------------------------------------------------------------------------------
         # !release - removes a users illegal camping penalty
@@ -458,7 +457,6 @@ async def evt_privmsg(server, message):
                 time_data(server, channel, dusername, 'illegal_camping', 'rem')
                 pc.privmsg_(server, channel, username.decode() + "'s illegal camping penalty has been lifted. Buy a camping permit next time! \x034[By order of: " + dusername + ']\x03')
                 return
-
         # !release username and !release all ---------------------------------------------------------------------------
             if len(mdata) == 5:
                 if mdata[4] == b'all':
@@ -614,8 +612,24 @@ async def evt_privmsg(server, message):
             rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
             tstat(server, channel, 'monthly')
             return
-        return
+
         # --------------------------------------------------------------------------------------------------------------
+        # !help
+        if mdata[3].lower() == b':!help':
+            # increase flood time
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
+            pc.privmsg_(server, channel, 'For DuckHunt HELP: https://m0de-60.github.io/super-duckhunt-web/super-duckhunt-help.htm')
+            return
+
+        # --------------------------------------------------------------------------------------------------------------
+        # !about
+        if mdata[3].lower() == b':!about':
+            # increase flood time
+            rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
+            pc.privmsg_(server, channel, '[ABOUT: ' + rdata['ptitle'] + ' ' + rdata['pversion'] + ' zCore Plugin Module][AUTHOR: ' + rdata['pauthor'] + '][WEBSITE: ' + rdata['pweb'] + ']')
+            return
+
+        return
 
     # ==================================================================================================================
     # PRIVMSG Commands /msg duckhunt <commands>
@@ -623,19 +637,19 @@ async def evt_privmsg(server, message):
     if b'#' not in channel:
         # --------------------------------------------------------------------------------------------------------------
         # BotMaster and Admin Commands
-        # ----------------------------------------------------------------------------------------------------------
+        # --------------------------------------------------------------------------------------------------------------
         # /msg duckhunt spawn #channel <type> (BOTMASTER & ADMIN)
         if mdata[3].lower() == b':spawn' and pc.is_admin(server, dusername) is True:
-            # invalid syntax ---------------------------------------------------------------------------------------
+            # invalid syntax -------------------------------------------------------------------------------------------
             if len(mdata) == 4:
                 pc.notice_(server, username, '[DuckHunt] * Invalid syntax.')
                 return
-            # invalid channel name ---------------------------------------------------------------------------------
+            # invalid channel name -------------------------------------------------------------------------------------
             if len(mdata) >= 5:
                 if b'#' not in mdata[4] and len(mdata) == 5:
                     pc.notice_(server, username, '[DuckHunt] * Invalid channel name.')
                     return
-                # channel is not a duckhunt channel ----------------------------------------------------------------
+                # channel is not a duckhunt channel --------------------------------------------------------------------
                 if pc.iistok(rdata[server, 'channels'], str(mdata[4].decode()).lower(), ',') is False:
                     pc.notice_(server, username, '[DuckHunt] * Channel name is not a listed DuckHunt channel.')
                     return
@@ -646,26 +660,236 @@ async def evt_privmsg(server, message):
                 # maximum ducks are already spawned in channel ---------------------------------------------------------
                 if ducksdata(server, dchannel) >= rdata[server, chan]['maxducks']:
                     pc.notice_(server, username, '[DuckHunt] * The maximum amount of ducks exist.')
-                # /msg duckhunt spawn #channel - spawn random duck in channel --------------------------------------
+                # /msg duckhunt spawn #channel - spawn random duck in channel ------------------------------------------
                 if len(mdata) == 5:
                     await spawnduck(server, dchannel)
                     return
-                # /msg duckhunt spawn #channel <normal/golden> - spawn a normal or golden duck in channel ----------
+                # /msg duckhunt spawn #channel <normal/golden> - spawn a normal or golden duck in channel --------------
                 elif len(mdata) == 6:
-                    # /msg duckhunt spawn #channel normal ----------------------------------------------------------
+                    # /msg duckhunt spawn #channel normal --------------------------------------------------------------
                     if mdata[5] == b'normal':
                         await spawnduck(server, dchannel, 'normal')
                         return
-                    # /msg duckhunt spawn #chnnael golden ----------------------------------------------------------
+                    # /msg duckhunt spawn #chnnael golden --------------------------------------------------------------
                     elif mdata[5] == b'gold' or mdata[5] == b'golden':
                         await spawnduck(server, dchannel, 'gold')
                         return
-                    # invalid duck type ----------------------------------------------------------------------------
+                    # invalid duck type --------------------------------------------------------------------------------
                     else:
                         pc.notice_(server, username, '[DuckHunt] * Invalid duck type.')
                         return
                 else:
                     return 0
+        # --------------------------------------------------------------------------------------------------------------
+        # /msg duckhunt maxducks <channel> <X>
+        # sets the maxducks value (numbers only!)
+        if mdata[3].lower() == b':maxducks' and pc.is_botmaster(dusername) is True:
+            if len(mdata) < 6:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Use: /msg ' + rdata[server, 'botname'] + ' maxducks #channel <x>')
+                return
+            if b'#' not in mdata[4]:
+                pc.notice_(server, username, '[DuckHunt] * Invalid request. Channel name must contain a hash "#channel"')
+                return
+            chan = mdata[4].decode()
+            chan = chan.lower()
+            if pc.istok(rdata[server, 'channels'], chan, ',') is False:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
+                return
+            val = mdata[5].decode()
+            if val.isnumeric() is False or isinstance(str(val), float) is True:
+                pc.notice_(server, username, '[DuckHunt] * Invalid request. Value must be an integer.')
+                return
+            chan = chan.replace('#', '')
+            rdata[server, chan]['maxducks'] = int(val)
+            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'maxducks', str(val))
+            pc.notice_(server, username, '[DuckHunt] * maxducks value changed to: ' + str(val) + ' ducks.')
+            return
+
+        # --------------------------------------------------------------------------------------------------------------
+        # /msg duckhunt spawntime <channel> <X>
+        # sets the spawntime value (numbers only!)
+        if mdata[3].lower() == b':spawntime' and pc.is_botmaster(dusername) is True:
+            if len(mdata) < 6:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Use: /msg ' + rdata[server, 'botname'] + ' spawntime #channel <x>')
+                return
+            if b'#' not in mdata[4]:
+                pc.notice_(server, username, '[DuckHunt] * Invalid request. Channel name must contain a hash "#channel"')
+                return
+            chan = mdata[4].decode()
+            chan = chan.lower()
+            if pc.istok(rdata[server, 'channels'], chan, ',') is False:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
+                return
+            val = mdata[5].decode()
+            if val.isnumeric() is False or isinstance(str(val), float) is True:
+                pc.notice_(server, username, '[DuckHunt] * Invalid request. Value must be an integer.')
+                return
+            chan = chan.replace('#', '')
+            rdata[server, chan]['spawntime'] = int(val)
+            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'spawntime', str(val))
+            pc.notice_(server, username, '[DuckHunt] * spawntime value changed to: ' + str(val) + ' seconds.')
+            return
+
+        # --------------------------------------------------------------------------------------------------------------
+        # /msg duckhunt flytime <channel> <X>
+        # sets the flytime value (numbers only!)
+        if mdata[3].lower() == b':flytime' and pc.is_botmaster(dusername) is True:
+            if len(mdata) < 6:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Use: /msg ' + rdata[server, 'botname'] + ' flytime #channel <x>')
+                return
+            if b'#' not in mdata[4]:
+                pc.notice_(server, username, '[DuckHunt] * Invalid request. Channel name must contain a hash "#channel"')
+                return
+            chan = mdata[4].decode()
+            chan = chan.lower()
+            if pc.istok(rdata[server, 'channels'], chan, ',') is False:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
+                return
+            val = mdata[5].decode()
+            if val.isnumeric() is False or isinstance(str(val), float) is True:
+                pc.notice_(server, username, '[DuckHunt] * Invalid request. Value must be an integer.')
+                return
+            chan = chan.replace('#', '')
+            rdata[server, chan]['flytime'] = int(val)
+            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'flytime', str(val))
+            pc.notice_(server, username, '[DuckHunt] * flytime value changed to: ' + str(val) + ' seconds.')
+            return
+
+        # --------------------------------------------------------------------------------------------------------------
+        # /msg duckhunt duckexp <channel> <x>
+        # sets the duckexp value (numbers only!)
+        if mdata[3].lower() == b':duckexp' and pc.is_botmaster(dusername) is True:
+            if len(mdata) < 6:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Use: /msg ' + rdata[server, 'botname'] + ' duckexp #channel <x>')
+                return
+            if b'#' not in mdata[4]:
+                pc.notice_(server, username, '[DuckHunt] * Invalid request. Channel name must contain a hash "#channel"')
+                return
+            chan = mdata[4].decode()
+            chan = chan.lower()
+            if pc.istok(rdata[server, 'channels'], chan, ',') is False:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
+                return
+            val = mdata[5].decode()
+            if val.isnumeric() is False or isinstance(str(val), float) is True:
+                pc.notice_(server, username, '[DuckHunt] * Invalid request. Value must be an integer.')
+                return
+            chan = chan.replace('#', '')
+            rdata[server, chan]['duckexp'] = int(val)
+            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'duckexp', str(val))
+            pc.notice_(server, username, '[DuckHunt] * duckexp value changed to: ' + str(val) + ' xp.')
+            return
+
+        # --------------------------------------------------------------------------------------------------------------
+        # /msg duckhunt duckfear <channel> <x>
+        # sets the duckfear value (numbers only!)
+        if mdata[3].lower() == b':duckfear' and pc.is_botmaster(dusername) is True:
+            if len(mdata) < 6:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Use: /msg ' + rdata[server, 'botname'] + ' duckfear #channel <x>')
+                return
+            if b'#' not in mdata[4]:
+                pc.notice_(server, username, '[DuckHunt] * Invalid request. Channel name must contain a hash "#channel"')
+                return
+            chan = mdata[4].decode()
+            chan = chan.lower()
+            if pc.istok(rdata[server, 'channels'], chan, ',') is False:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
+                return
+            val = mdata[5].decode()
+            if val.isnumeric() is False or isinstance(str(val), float) is True:
+                pc.notice_(server, username, '[DuckHunt] * Invalid request. Value must be an integer.')
+                return
+            chan = chan.replace('#', '')
+            rdata[server, chan]['duckfear'] = int(val)
+            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'duckfear', str(val))
+            pc.notice_(server, username, '[DuckHunt] * duckfear value changed to: ' + str(val) + ' fear points.')
+            return
+
+        # --------------------------------------------------------------------------------------------------------------
+        # /msg duckhunt duckgold <channel> <x>
+        # sets the duckgold value (numbers only!)
+        if mdata[3].lower() == b':duckgold' and pc.is_botmaster(dusername) is True:
+            if len(mdata) < 6:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Use: /msg ' + rdata[server, 'botname'] + ' duckgold #channel <x>')
+                return
+            if b'#' not in mdata[4]:
+                pc.notice_(server, username, '[DuckHunt] * Invalid request. Channel name must contain a hash "#channel"')
+                return
+            chan = mdata[4].decode()
+            chan = chan.lower()
+            if pc.istok(rdata[server, 'channels'], chan, ',') is False:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
+                return
+            val = mdata[5].decode()
+            if val.isnumeric() is False or isinstance(str(val), float) is True:
+                pc.notice_(server, username, '[DuckHunt] * Invalid request. Value must be an integer.')
+                return
+            chan = chan.replace('#', '')
+            rdata[server, chan]['duckgold'] = int(val)
+            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'duckgold', str(val))
+            pc.notice_(server, username, '[DuckHunt] * duckgold value changed to: ' + str(val) + '%.')
+            return
+
+        # --------------------------------------------------------------------------------------------------------------
+        # /msg duckhunt friendrate <channel> <x>
+        # sets the friendrate value (numbers only!)
+        if mdata[3].lower() == b':friendrate' and pc.is_botmaster(dusername) is True:
+            if len(mdata) < 6:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Use: /msg ' + rdata[server, 'botname'] + ' friendrate #channel <x>')
+                return
+            if b'#' not in mdata[4]:
+                pc.notice_(server, username, '[DuckHunt] * Invalid request. Channel name must contain a hash "#channel"')
+                return
+            chan = mdata[4].decode()
+            chan = chan.lower()
+            if pc.istok(rdata[server, 'channels'], chan, ',') is False:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
+                return
+            val = mdata[5].decode()
+            if val.isnumeric() is False or isinstance(str(val), float) is True:
+                pc.notice_(server, username, '[DuckHunt] * Invalid request. Value must be an integer.')
+                return
+            chan = chan.replace('#', '')
+            rdata[server, chan]['friendrate'] = int(val)
+            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'friendrate', str(val))
+            pc.notice_(server, username, '[DuckHunt] * friendrate value changed to: ' + str(val) + '%.')
+            return
+
+        # --------------------------------------------------------------------------------------------------------------
+        # /msg duckhunt floodcheck <channel> <on/off>
+        # turns flood contorl on or off (recommended to keep on)
+        if mdata[3].lower() == b':floodcheck' and pc.is_botmaster(dusername) is True:
+            if len(mdata) <= 5:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Use: /msg ' + rdata[server, 'botname'] + ' floodcheck #channel <on/off>')
+                return
+            if b'#' not in mdata[4]:
+                pc.notice_(server, username, '[DuckHunt] * Invalid request. Channel name must contain a hash "#channel"')
+                return
+            chan = mdata[4].decode()
+            chan = chan.lower()
+            if pc.istok(rdata[server, 'channels'], chan, ',') is False:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
+                return
+            chan = chan.replace('#', '')
+            if mdata[5] == b'on':
+                if rdata[server, chan]['flood_check'] == 'on':
+                    pc.notice_(server, username, '[DuckHunt] * Flood control is already turned on.')
+                    return
+                rdata[server, chan]['flood_check'] = 'on'
+                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'floodcheck', 'on')
+                pc.notice_(server, username, '[DuckHunt] * Flood control has been turned ON.')
+                return
+            elif mdata[5] == b'off':
+                if rdata[server, chan]['flood_check'] == 'off':
+                    pc.notice_(server, username, '[DuckHunt] * Flood control is already turned off.')
+                    return
+                rdata[server, chan]['flood_check'] = 'off'
+                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'floodcheck', 'off')
+                pc.notice_(server, username, '[DuckHunt] * Flood control has been turned OFF.')
+                return
+            else:
+                pc.notice_(server, username, '[DuckHunt] * Invalid input. Use: /msg ' + rdata[server, 'botname'] + ' floodcheck #channel <on/off>')
+                return
         # --------------------------------------------------------------------------------------------------------------
         # /msg duckhunt duckstats #channel player
         if mdata[3].lower() == b':duckstats' and pc.is_admin(server, dusername) is True:
@@ -737,7 +961,7 @@ async def evt_privmsg(server, message):
             pc.notice_(server, username, '[DuckHunt] * Reset complete!')
             return
         # --------------------------------------------------------------------------------------------------------------
-        # /msg duckhunt rules <name> <args>
+        # /msg duckhunt rules <channel> <name> <args>
         if mdata[3].lower() == b':rules' and pc.is_botmaster(dusername) is True:
             if len(mdata) == 4 or len(mdata) < 7 or len(mdata) > 7:
                 pc.notice_(server, username, '[DuckHunt] * Invalid input. Use: /msg ' + rdata[server, 'botname'] + ' rules <channel> <rule> <args>')
@@ -752,7 +976,7 @@ async def evt_privmsg(server, message):
                 except KeyError:
                     pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
                     return
-                # /msg duckhunt rules gunricochet <args> ---------------------------------------------------------------
+                # /msg duckhunt rules <channel> gunricochet <args> ---------------------------------------------------------------
                 if mdata[5].lower() == b'gunricochet':
                     if mdata[6].lower() == b'0':
                         if str(game_rules(server, dchannel, 'gunricochet')) == '0':
@@ -762,12 +986,12 @@ async def evt_privmsg(server, message):
                         return
                     mdata6 = mdata[6].decode()
                     if mdata6.isnumeric() is False or isinstance(str(mdata6), float) is True:
-                        pc.notice_(server, username, '[DuckHunt] * Invalid request: Bullet ricochet value must be an integer.\r\n')
+                        pc.notice_(server, username, '[DuckHunt] * Invalid request: Bullet ricochet value must be an integer.')
                         return
                     game_rules(server, dchannel, 'gunricochet', str(mdata6))
-                    pc.notice_(server, username, '[DuckHunt] * Bullet ricochet has been set to ON at: ' + str(mdata6), + '%.\r\n')
+                    pc.notice_(server, username, '[DuckHunt] * Bullet ricochet has been set to ON at: ' + str(mdata6) + '%.')
                     return
-                # /msg duckhunt rules thebushes <args> -----------------------------------------------------------------
+                # /msg duckhunt rules <channel> thebushes <args> -----------------------------------------------------------------
                 if mdata[5].lower() == b'thebushes':
                     if mdata[6].lower() == b'0':
                         if str(game_rules(server, dchannel, 'thebushes')) == '0':
@@ -779,10 +1003,10 @@ async def evt_privmsg(server, message):
                     if mdata6.isnumeric() is False or isinstance(str(mdata6), float) is True:
                         pc.notice_(server, username, '[DuckHunt] * Invalid request: Searching the bushes value must be an integer.\r\n')
                         return
-                    game_rules(server, channel, 'thebushes', str(mdata6))
-                    pc.notice_(server, username, '[DuckHunt] * Searching the bushes has been set to ON at: ' + str(mdata6), + '%.\r\n')
+                    game_rules(server, dchannel, 'thebushes', str(mdata6))
+                    pc.notice_(server, username, '[DuckHunt] * Searching the bushes has been set to ON at: ' + str(mdata6) + '%.\r\n')
                     return
-                # /msg duckhunt rules gunconf <args> -------------------------------------------------------------------
+                # /msg duckhunt rules <channel> gunconf <args> -------------------------------------------------------------------
                 if mdata[5].lower() == b'gunconf':
                     if mdata[6].lower() == b'on':
                         if game_rules(server, dchannel, 'gunconf') == 'on':
@@ -798,7 +1022,7 @@ async def evt_privmsg(server, message):
                         game_rules(server, dchannel, 'gunconf', 'off')
                         pc.notice_(server, username, '[DuckHunt] * Gun confiscation has been turned off.')
                         return
-                # /msg duckhunt rules infammo <args> -------------------------------------------------------------------
+                # /msg duckhunt rules <channel> infammo <args> -------------------------------------------------------------------
                 if mdata[5].lower() == b'infammo':
                     if mdata[6].lower() == b'on':
                         if game_rules(server, dchannel, 'infammo') == 'on':
@@ -814,7 +1038,7 @@ async def evt_privmsg(server, message):
                         game_rules(server, dchannel, 'infammo', 'off')
                         pc.notice_(server, username, '[DuckHunt] * Infinite ammo has been turned off.')
                         return
-                # /msg duckhunt rules bang <args> ----------------------------------------------------------------------
+                # /msg duckhunt rules <channel> bang <args> ----------------------------------------------------------------------
                 if mdata[5].lower() == b'bang':
                     if mdata[6].lower() == b'on':
                         if game_rules(server, dchannel, 'bang') == 'on':
@@ -833,7 +1057,7 @@ async def evt_privmsg(server, message):
                         game_rules(server, dchannel, 'bang', 'off')
                         pc.notice_(server, username, '[DuckHunt] * !bang command set has been disabled.')
                         return
-                # /msg duckhunt rules bef <args> -----------------------------------------------------------------------
+                # /msg duckhunt rules <channel> bef <args> -----------------------------------------------------------------------
                 if mdata[5].lower() == b'bef':
                     if mdata[6].lower() == b'on':
                         if game_rules(server, dchannel, 'bef') == 'on':
@@ -852,9 +1076,12 @@ async def evt_privmsg(server, message):
                         game_rules(server, dchannel, 'bef', 'off')
                         pc.notice_(server, username, '[DuckHunt] * !bef command set has been disabled.')
                         return
-            # /msg duckhunt rules camping <ducks^time> -------------------------------------------------------------
+            # /msg duckhunt rules <channel> camping <ducks^time> -------------------------------------------------------------
             # ducks and time must be whole numbers. Time is interpreted in hours
-            if len(mdata) == 8 and mdata[5].lower() == b':camping':
+            if len(mdata) == 7 and mdata[5].lower() == b'camping':
+                if mdata[6].decode() == '0^0' and game_rules(server, dchannel, 'camping') == 'off':
+                    pc.notice_(server, username, '[DuckHunt] * Free camping is already turned on.')
+                    return
                 val = mdata[6].decode()
                 if pc.numtok(val, '^') != 2:
                     pc.notice_(server, username, '[DuckHunt] * Invalid data, value must be in a token: X^Y')
