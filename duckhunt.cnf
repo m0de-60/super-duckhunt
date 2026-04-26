@@ -44,9 +44,11 @@ camp_count = 0
 illegal_camping = 0
 fatigue = 0
 fatigue = 0
-tday = 0
-tweek = 0
-tmonth = 0
+hour = 0
+day = 0
+week = 0
+month = 0
+year = 0
 topstat = 0^0,0^0,0^0,0^0
 top_stat = 0^0,0^0,0^0,0^0
 
