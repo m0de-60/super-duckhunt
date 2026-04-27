@@ -40,6 +40,7 @@ def system_req_():
 # Exit plugin
 def plugin_exit_():
     global rdata
+
     mprint(f'Shutting down...')
     rdata = {}
     return
@@ -78,66 +79,80 @@ def plugin_init_():
         for z in range(len(rdata[server, 'channel'])):
             chan = rdata[server, 'channel'][z].replace('#', '')
             rdata[server, chan] = {}
-            # ###########################################################################
-            rdata[server, chan]['duckhunt'] = True  # Auto Start DuckHunt True or False
-            # ###########################################################################
-            rdata[server, chan]['game'] = False  # Do not change
-            rdata[server, chan]['kick'] = False
-            rdata[server, chan]['rules'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'rules')
-            rdata[server, chan]['maxducks'] = int(pc.cnfread('duckhunt.cnf', server + '_' + chan, 'maxducks'))
-            rdata[server, chan]['spawntime'] = int(pc.cnfread('duckhunt.cnf', server + '_' + chan, 'spawntime'))
-            rdata[server, chan]['flytime'] = int(pc.cnfread('duckhunt.cnf', server + '_' + chan, 'flytime'))
-            rdata[server, chan]['duckexp'] = int(pc.cnfread('duckhunt.cnf', server + '_' + chan, 'duckexp'))
-            rdata[server, chan]['duckfear'] = int(pc.cnfread('duckhunt.cnf', server + '_' + chan, 'duckfear'))
-            rdata[server, chan]['duckgold'] = int(pc.cnfread('duckhunt.cnf', server + '_' + chan, 'duckgold'))
-            rdata[server, chan]['friendrate'] = int(pc.cnfread('duckhunt.cnf', server + '_' + chan, 'friendrate'))
-            rdata[server, chan]['relays'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'relays').lower()
-            rdata[server, chan]['rules'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'rules').lower()
-            rdata[server, chan]['top_shot'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'top_shot').lower()
-            rdata[server, chan]['timer'] = '0'
-            rdata[server, chan]['thread'] = ''
-            rdata[server, chan]['duck'] = {}
-            rdata[server, chan]['golduckxp'] = {}  # For determining golden duck variable xp
-            rdata[server, chan]['gun_grease'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'gun_grease')
-            rdata[server, chan]['silencer'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'silencer')
-            rdata[server, chan]['lucky_charm'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'lucky_charm')
-            rdata[server, chan]['sunglasses'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'sunglasses')
-            rdata[server, chan]['trigger_lock'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'trigger_lock')
-            rdata[server, chan]['bread_lock'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'bread_lock')
-            rdata[server, chan]['accident_insurance'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'accident_insurance')
-            rdata[server, chan]['rain_coat'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'rain_coat')
-            rdata[server, chan]['duck_bomb'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'duck_bomb')
-            rdata[server, chan]['bombed'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'bombed')
-            rdata[server, chan]['bedazzled'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'bedazzled')
-            rdata[server, chan]['soggy'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'soggy')
-            rdata[server, chan]['expl_ammo'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'expl_ammo')
-            rdata[server, chan]['popcorn'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'popcorn')
-            rdata[server, chan]['sabotage'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'sabotage')
-            rdata[server, chan]['duck_jam'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'duck_jam')
-            rdata[server, chan]['confiscated'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'confiscated')
-            rdata[server, chan]['disarmed'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'disarmed')
-            rdata[server, chan]['jammed'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'jammed')
-            rdata[server, chan]['camping_permit'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'camping_permit')
-            rdata[server, chan]['camp_count'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'camp_count')
-            rdata[server, chan]['illegal_camping'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'illegal_camping')
-            rdata[server, chan]['fatigue'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'fatigue')
-            rdata[server, chan]['fatigue_point'] = 0
-            rdata[server, chan]['fear_factor'] = False  # do not change
+            # ##########################################################################################################
+            # config file loading/creation for each server_channel instance! DO NOT CHANGE
+            rdata[server, chan]['config_file'] = 'duckhunt_' + server + '_' + chan + '.cnf'
+            mprint(f'Checking for configuration file: {rdata[server, chan]['config_file']}...')
+            if pc.isfile(rdata[server, chan]['config_file']) is False:
+                mprint(f'Configuration file {rdata[server, chan]['config_file']} not found, creating default configuration file...')
+                config_build(server, '#' + chan)
+                mprint(f'Configuration file creation complete for {rdata[server, chan]['config_file']}...')
+            else:
+                mprint(f'Configuration file {rdata[server, chan]['config_file']} found...')
+            mprint(f'Loading configuration from file {rdata[server, chan]['config_file']}...')
+            # ##########################################################################################################
+            rdata[server, chan]['rules'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'rules')
+            rdata[server, chan]['maxducks'] = int(pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'maxducks'))
+            rdata[server, chan]['spawntime'] = int(pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'spawntime'))
+            rdata[server, chan]['flytime'] = int(pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'flytime'))
+            rdata[server, chan]['duckexp'] = int(pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'duckexp'))
+            rdata[server, chan]['duckfear'] = int(pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'duckfear'))
+            rdata[server, chan]['duckgold'] = int(pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'duckgold'))
+            rdata[server, chan]['friendrate'] = int(pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'friendrate'))
+            rdata[server, chan]['relays'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'relays').lower()
+            rdata[server, chan]['rules'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'rules').lower()
+            # rdata[server, chan]['top_shot'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'top_shot').lower()
+            rdata[server, chan]['gun_grease'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'gun_grease')
+            rdata[server, chan]['silencer'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'silencer')
+            rdata[server, chan]['lucky_charm'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'lucky_charm')
+            rdata[server, chan]['sunglasses'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'sunglasses')
+            rdata[server, chan]['trigger_lock'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'trigger_lock')
+            rdata[server, chan]['bread_lock'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'bread_lock')
+            rdata[server, chan]['accident_insurance'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'accident_insurance')
+            rdata[server, chan]['rain_coat'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'rain_coat')
+            rdata[server, chan]['duck_bomb'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'duck_bomb')
+            rdata[server, chan]['bombed'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'bombed')
+            rdata[server, chan]['bedazzled'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'bedazzled')
+            rdata[server, chan]['soggy'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'soggy')
+            rdata[server, chan]['expl_ammo'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'expl_ammo')
+            rdata[server, chan]['popcorn'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'popcorn')
+            rdata[server, chan]['sabotage'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'sabotage')
+            rdata[server, chan]['duck_jam'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'duck_jam')
+            rdata[server, chan]['confiscated'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'confiscated')
+            rdata[server, chan]['disarmed'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'disarmed')
+            rdata[server, chan]['jammed'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'jammed')
+            rdata[server, chan]['camping_permit'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'camping_permit')
+            rdata[server, chan]['camp_count'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'camp_count')
+            rdata[server, chan]['illegal_camping'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'illegal_camping')
+            rdata[server, chan]['fatigue'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'fatigue')
             # time and date keeping
-            rdata[server, chan]['hour'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'hour')
-            rdata[server, chan]['day'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'day')
-            rdata[server, chan]['week'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'week')
-            rdata[server, chan]['month'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'month')
-            rdata[server, chan]['year'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'year')
+            rdata[server, chan]['hour'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'hour')
+            rdata[server, chan]['day'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'day')
+            rdata[server, chan]['week'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'week')
+            rdata[server, chan]['month'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'month')
+            rdata[server, chan]['year'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'year')
             # top shot statistics
             rdata[server, chan]['top_stat'] = {}
-            t_shot = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'topstat')
+            t_shot = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'topstat')
             rdata[server, chan]['top_stat']['daily'] = pc.gettok(t_shot, 0, ',')
             rdata[server, chan]['top_stat']['weekly'] = pc.gettok(t_shot, 1, ',')
             rdata[server, chan]['top_stat']['monthly'] = pc.gettok(t_shot, 2, ',')
             rdata[server, chan]['top_stat']['totalstat'] = pc.gettok(t_shot, 3, ',')
             # flood protection values
-            rdata[server, chan]['flood_check'] = pc.cnfread('duckhunt.cnf', server + '_' + chan, 'floodcheck')
+            rdata[server, chan]['flood_check'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'floodcheck')
+            mprint(f'Configuration from {rdata[server, chan]['config_file']} loaded successfully...')
+            mprint(f'Finalizing configuration values for {server} #{chan}...')
+            # ###########################################################################
+            rdata[server, chan]['duckhunt'] = True  # Auto Start DuckHunt True or False #
+            # ###########################################################################
+            rdata[server, chan]['game'] = False  # Do not change
+            rdata[server, chan]['kick'] = False  # Do not change
+            rdata[server, chan]['timer'] = '0'
+            rdata[server, chan]['thread'] = ''
+            rdata[server, chan]['duck'] = {}
+            rdata[server, chan]['golduckxp'] = {}  # For determining golden duck variable xp
+            rdata[server, chan]['fatigue_point'] = 0  # Always leave at 0
+            rdata[server, chan]['fear_factor'] = False  # do not change
             rdata[server, chan]['flood'] = 0
             rdata[server, chan]['flood_time'] = pc.cputime()
             rdata[server, chan]['flood_cont'] = False
@@ -147,16 +162,18 @@ def plugin_init_():
                 rdata[server, chan]['duck'][y] = '0'  # Duck ID assignment (leave at '0')
                 rdata[server, chan]['golduckxp'][y] = '0'
                 continue
+            mprint(f'Loasding configuration for {server} #{chan} completed successfuly.')
             continue
         continue
 
-    mprint(f"{rdata['ptitle']} * Version: {rdata['pversion']} By: {rdata['pauthor']} - Loaded successfully.")
+    mprint(f"{rdata['ptitle']} * Version: {rdata['pversion']} By: {rdata['pauthor']} - Module loaded successfully.")
 
 # ======================================================================================================================
 # KICK Event (for timer correspondance)
 # evt_kick('servername', b':Neo_Nemesis!~TheOne@th3.m4tr1x.h4ck3d.y0u KICK #testduck zcore :testing 1 2 3')
 async def evt_kick(server, kickdata):
     global rdata
+
     kdata = kickdata.split(b' ')
 
     # Ignore anything not listed in duckhunt.cnf server/channel info.
@@ -180,6 +197,7 @@ async def evt_kick(server, kickdata):
 # evt_join('servername', b':Username!~Host@mask.net JOIN :#Channel')
 async def evt_join(server, joindata):
     global rdata
+
     jdata = joindata.split(b' ')
 
     # Ignore anything not listed in duckhunt.cnf server/channel info.
@@ -215,6 +233,7 @@ async def evt_join(server, joindata):
 # evt_privmsg('servername', b':Username!~Host@mask.net PRIVMSG target :Message data')
 async def evt_privmsg(server, message):
     global rdata
+
     mdata = message.split(b' ')
     # Ignore abything not listed in duckhunt.cnf server/channel info.
     if pc.iistok(rdata['serverlist'], server, ',') is False:
@@ -230,17 +249,8 @@ async def evt_privmsg(server, message):
     chan = dchannel.replace('#', '')
     sect = server + '_' + chan
     dsect = server + '_' + chan + '_ducks'
-    # botmaster controls OLD DELETE
-    # if b'#' in channel and pc.is_botmaster(dusername) is True:
-    #
-    #    # /privmsg botname boost <player> (player boost)
-    #    if mdata[3].lower() == b':boost' and len(mdata) > 4:
-    #        dsuser = mdata[4].decode()
-    #        if pc.cnfexists('duckhunt.cnf', dsect, dsuser) is False:
-    #            pc.notice_(server, channel, 'User ' + dsuser + " has not played yet.")
-    #            return
 
-    # admin controls
+    # admin/botmaster controls
     if b'#' in channel and pc.is_admin(server, dusername) is True:
         if mdata[3].lower() == b':!duckhunt' and len(mdata) > 4:
             if mdata[4].lower() == b'on':
@@ -330,25 +340,22 @@ async def evt_privmsg(server, message):
             # command
             if len(mdata) >= 4:
                 if len(mdata) == 4:
-                    # if pc.cnfexists('duckhunt.cnf', dsect, dusername) is False:
                     if is_player(server, channel, username) is False:
                         pc.privmsg_(server, channel, 'User ' + username.decode() + " has not played yet.")
                         return
-                    await duckstats(server, channel, username, username)
+                    duckstats(server, channel, username, username)
                     return
                 if len(mdata) == 5:
                     dsuser = mdata[4].decode()
                     # checks and corrects case sensativity if specified user is in the channel
                     if pc.is_on_chan(server, channel, mdata[4]) is True:
                         dsuser = pc.ul_case(server, channel, mdata[4].decode())
-                    # if pc.cnfexists('duckhunt.cnf', dsect, dsuser) is False:
                     if is_player(server, channel, mdata[4]) is False:
                         pc.privmsg_(server, channel, 'User ' + dsuser + " has not played yet.")
                         return
                     # checks and corrects case sensativity if specified user is not in the channel
                     dsuser = player_case(server, channel, mdata[4])
-                    mprint(f'Line 346 dsuser: {dsuser}')
-                    await duckstats(server, channel, username, dsuser.encode())
+                    duckstats(server, channel, username, dsuser.encode())
                     return
             return
         # --------------------------------------------------------------------------------------------------------------
@@ -358,7 +365,7 @@ async def evt_privmsg(server, message):
             rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
             
             # haven't played yet
-            if pc.cnfexists('duckhunt.cnf', dsect, dusername) is False:
+            if pc.cnfexists(rdata[server, chan]['config_file'], dsect, dusername) is False:
                 pc.notice_(server, username, username.decode() + " you can't use the shop yet because you haven't played. Shoot some ducks first.")
                 return
             # !shop - shop menu
@@ -366,7 +373,7 @@ async def evt_privmsg(server, message):
                 # increase flood count by addition 3 for shop menu
                 rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 3
                 # activate shop menu
-                await shopmenu(server, channel, username)
+                shopmenu(server, channel, username)
                 return
             if len(mdata) >= 5:
                 shopid = mdata[4].decode()
@@ -379,9 +386,9 @@ async def evt_privmsg(server, message):
                 # print(f'async Shop Item {shopid}')
                 # pc.privmsg_(server, channel, 'async Shop Item ' + str(shopid))
                 if len(mdata) >= 6:
-                    await shop(server, channel, username, int(shopid), mdata[5])
+                    shop(server, channel, username, int(shopid), mdata[5])
                 else:
-                    await shop(server, channel, username, int(shopid))
+                    shop(server, channel, username, int(shopid))
                 return
             return
 
@@ -565,11 +572,11 @@ async def evt_privmsg(server, message):
             # increase flood time
             rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
             # print(f'Swim!')
-            if pc.cnfexists('duckhunt.cnf', dsect, dusername) is False:
+            if pc.cnfexists(rdata[server, chan]['config_file'], dsect, dusername) is False:
                 pc.privmsg_(server, channel, "You haven't played yet. Shoot some ducks first.")
                 return
             # pc.privmsg_(server, channel, 'Swim!')
-            await swim(server, channel, username)
+            swim(server, channel, username)
             return
 
         # --------------------------------------------------------------------------------------------------------------
@@ -701,7 +708,7 @@ async def evt_privmsg(server, message):
                 return
             chan = chan.replace('#', '')
             rdata[server, chan]['maxducks'] = int(val)
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'maxducks', str(val))
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'maxducks', str(val))
             pc.notice_(server, username, '[DuckHunt] * maxducks value changed to: ' + str(val) + ' ducks.')
             return
 
@@ -726,7 +733,7 @@ async def evt_privmsg(server, message):
                 return
             chan = chan.replace('#', '')
             rdata[server, chan]['spawntime'] = int(val)
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'spawntime', str(val))
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'spawntime', str(val))
             pc.notice_(server, username, '[DuckHunt] * spawntime value changed to: ' + str(val) + ' seconds.')
             return
 
@@ -751,7 +758,7 @@ async def evt_privmsg(server, message):
                 return
             chan = chan.replace('#', '')
             rdata[server, chan]['flytime'] = int(val)
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'flytime', str(val))
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'flytime', str(val))
             pc.notice_(server, username, '[DuckHunt] * flytime value changed to: ' + str(val) + ' seconds.')
             return
 
@@ -776,7 +783,7 @@ async def evt_privmsg(server, message):
                 return
             chan = chan.replace('#', '')
             rdata[server, chan]['duckexp'] = int(val)
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'duckexp', str(val))
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'duckexp', str(val))
             pc.notice_(server, username, '[DuckHunt] * duckexp value changed to: ' + str(val) + ' xp.')
             return
 
@@ -801,7 +808,7 @@ async def evt_privmsg(server, message):
                 return
             chan = chan.replace('#', '')
             rdata[server, chan]['duckfear'] = int(val)
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'duckfear', str(val))
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'duckfear', str(val))
             pc.notice_(server, username, '[DuckHunt] * duckfear value changed to: ' + str(val) + ' fear points.')
             return
 
@@ -826,7 +833,7 @@ async def evt_privmsg(server, message):
                 return
             chan = chan.replace('#', '')
             rdata[server, chan]['duckgold'] = int(val)
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'duckgold', str(val))
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'duckgold', str(val))
             pc.notice_(server, username, '[DuckHunt] * duckgold value changed to: ' + str(val) + '%.')
             return
 
@@ -851,7 +858,7 @@ async def evt_privmsg(server, message):
                 return
             chan = chan.replace('#', '')
             rdata[server, chan]['friendrate'] = int(val)
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'friendrate', str(val))
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'friendrate', str(val))
             pc.notice_(server, username, '[DuckHunt] * friendrate value changed to: ' + str(val) + '%.')
             return
 
@@ -876,7 +883,7 @@ async def evt_privmsg(server, message):
                     pc.notice_(server, username, '[DuckHunt] * Flood control is already turned on.')
                     return
                 rdata[server, chan]['flood_check'] = 'on'
-                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'floodcheck', 'on')
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'floodcheck', 'on')
                 pc.notice_(server, username, '[DuckHunt] * Flood control has been turned ON.')
                 return
             elif mdata[5] == b'off':
@@ -884,7 +891,7 @@ async def evt_privmsg(server, message):
                     pc.notice_(server, username, '[DuckHunt] * Flood control is already turned off.')
                     return
                 rdata[server, chan]['flood_check'] = 'off'
-                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'floodcheck', 'off')
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'floodcheck', 'off')
                 pc.notice_(server, username, '[DuckHunt] * Flood control has been turned OFF.')
                 return
             else:
@@ -909,14 +916,14 @@ async def evt_privmsg(server, message):
                     if is_player(server, mdata[4].lower(), username) is False:
                         pc.notice_(server, username, "[DuckHunt] * You haven't played yet.")
                         return
-                    await duckstats(server, mdata[4].lower(), username, username)
+                    duckstats(server, mdata[4].lower(), username, username)
                     return
                 if len(mdata) > 5:
                     if is_player(server, mdata[4].lower(), mdata[5]) is False:
                         pc.notice_(server, username, "[DuckHunt] * " + mdata[5].decode() + " hasn't played yet.")
                         return
                     pusername = player_case(server, mdata[4], mdata[5])
-                    await duckstats(server, mdata[4].lower(), username, pusername.encode())
+                    duckstats(server, mdata[4].lower(), username, pusername.encode())
                     return
                 return
         # --------------------------------------------------------------------------------------------------------------
@@ -1133,6 +1140,7 @@ def game_rules(server, channel, rule, args=''):
     global rdata
     chan = channel.replace('#', '')
     chan = chan.lower()
+
     rt = 0
     # game_rules('serverid', '#channel', 'msg', 'username')
     if rule == 'msg':
@@ -1204,7 +1212,7 @@ def game_rules(server, channel, rule, args=''):
             return pc.gettok(rdata[server, chan]['rules'], rt, ',')
     if args != '':
         newdat = pc.reptok(rdata[server, chan]['rules'], rt, ',', str(args))
-        pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'rules', newdat)
+        pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'rules', newdat)
         rdata[server, chan]['rules'] = newdat
         return 1
     return 0
@@ -1213,9 +1221,9 @@ def game_rules(server, channel, rule, args=''):
 # ducktimer('serverid', '#channel')
 def ducktimer(server, channel):
     global rdata
-
     chan = str(channel.replace('#', '')).lower()
     # duckid = 0
+
     while rdata[server, chan]['game'] is True:
         pc.bot_sleep(0.01)
         if rdata[server, chan]['duckhunt'] is False:
@@ -1226,14 +1234,14 @@ def ducktimer(server, channel):
         if str(pc.chour()) != rdata[server, chan]['hour']:
             mprint(f"It's a new hour!")
             rdata[server, chan]['hour'] = str(pc.chour())
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'hour', str(pc.chour()))
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'hour', str(pc.chour()))
             # reset hourly stats
 
         # New day
         if str(pc.cday()) != rdata[server, chan]['day']:
             mprint(f"It's a new day!")
             rdata[server, chan]['day'] = str(pc.cday())
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'day', str(pc.cday()))
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'day', str(pc.cday()))
             # reset daily stats
             t_day = rdata[server, chan]['top_stat']['daily'].split('^')
             pc.privmsg_(server, channel.encode(), "It's a new day! Stats yesterday: [Ducks Shot: " + str(t_day[0]) + "][Ducks Befriended: " + str(t_day[1]) + "] Daily stats have been reset for a new day!")
@@ -1243,7 +1251,7 @@ def ducktimer(server, channel):
         if str(pc.cweek()) != rdata[server, chan]['week']:
             mprint(f"It's a new week!")
             rdata[server, chan]['week'] = str(pc.cweek())
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'week', str(pc.cweek()))
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'week', str(pc.cweek()))
             # reset weekly stats
             t_week = rdata[server, chan]['top_stat']['weekly'].split('^')
             pc.privmsg_(server, channel.encode(), "It's a new week! Stats last week: [Ducks Shot: " + str(t_week[0]) + "][Ducks Befriended: " + str(t_week[1]) + "] Weekly stats have been reset for a new day!")
@@ -1253,7 +1261,7 @@ def ducktimer(server, channel):
         if str(pc.cmonth()) != rdata[server, chan]['month']:
             mprint(f"It's a new month!")
             rdata[server, chan]['month'] = str(pc.cmonth())
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'month', str(pc.cmonth()))
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'month', str(pc.cmonth()))
             # reset monthly stats
             t_month = rdata[server, chan]['top_stat']['monthly'].split('^')
             pc.privmsg_(server, channel.encode(), "It's a new month! Stats last month: [Ducks Shot: " + str(t_month[0]) + "][Ducks Befriended: " + str(t_month[1]) + "] Monthly stats have been reset for a new month!")
@@ -1262,7 +1270,7 @@ def ducktimer(server, channel):
         if str(pc.cyear()) != rdata[server, chan]['year']:
             mprint(f"It's a new year!")
             rdata[server, chan]['year'] = str(pc.cyear())
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'year', str(pc.cyear()))
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'year', str(pc.cyear()))
             # reset yearly stats
 
         # check flood timers here
@@ -1317,6 +1325,7 @@ def ducktimer(server, channel):
 def ducksdata(server, channel):
     global rdata
     chan = str(channel.replace('#', '')).lower()
+
     t = 0
     for x in range(len(rdata[server, chan]['duck'])):
         # print(f'Duck {x}...')
@@ -1384,6 +1393,7 @@ async def spawnduck(server, channel, dtype=''):
 async def fleeduck(server, channel, duckid):
     global rdata
     chan = str(channel.replace('#', '')).lower()
+
     rdata[server, chan]['duck'][int(duckid)] = '0'
     # reset duckfear if no ducks are present
     if ducksdata(server, channel) == 0:
@@ -1430,19 +1440,19 @@ def ctrl_data(server, channel, user, ctrl_name, args='', data=''):
         if args == 'add':
             if rdata[server, chan]['jammed'] == '0':
                 rdata[server, chan]['jammed'] = duser
-                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'jammed', rdata[server, chan]['jammed'])
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'jammed', rdata[server, chan]['jammed'])
                 return 1
             else:
                 tok = rdata[server, chan]['jammed']
                 rdata[server, chan]['jammed'] = tok + ',' + duser
-                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'jammed', rdata[server, chan]['jammed'])
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'jammed', rdata[server, chan]['jammed'])
                 return 1
         # ctrl_data('serverid', '#channel', 'username', 'jammed', 'rem') -----------------------------------------------
         # removes user from the jammed gun list
         if args == 'rem':
             if rdata[server, chan]['jammed'] == duser or pc.numtok(rdata[server, chan]['jammed'], ',') == 1:
                 rdata[server, chan]['jammed'] = '0'
-                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'jammed', rdata[server, chan]['jammed'])
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'jammed', rdata[server, chan]['jammed'])
                 return 1
             else:
                 token = rdata[server, chan]['jammed'].split(',')
@@ -1458,7 +1468,7 @@ def ctrl_data(server, channel, user, ctrl_name, args='', data=''):
                             newstring = token[x]
                             continue
                 rdata[server, chan]['jammed'] = newstring
-                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'jammed', rdata[server, chan]['jammed'])
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'jammed', rdata[server, chan]['jammed'])
                 return 1
     # Duck Jam (used with gun jamming) ---------------------------------------------------------------------------------
     # This is used to prevent the gun from jamming twice in a row
@@ -1469,12 +1479,12 @@ def ctrl_data(server, channel, user, ctrl_name, args='', data=''):
         if args == 'add':
             if rdata[server, chan]['duck_jam'] == '0':
                 rdata[server, chan]['duck_jam'] = duser
-                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'duck_jam', rdata[server, chan]['duck_jam'])
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'duck_jam', rdata[server, chan]['duck_jam'])
                 return 1
             else:
                 tok = rdata[server, chan]['duck_jam']
                 rdata[server, chan]['duck_jam'] = tok + ',' + duser
-                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'duck_jam', rdata[server, chan]['duck_jam'])
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'duck_jam', rdata[server, chan]['duck_jam'])
                 return 1
 
         # ctrl_data('serverid', '#channel', 'username', 'duck_jam', 'rem')
@@ -1482,7 +1492,7 @@ def ctrl_data(server, channel, user, ctrl_name, args='', data=''):
         if args == 'rem':
             if rdata[server, chan]['duck_jam'] == duser:
                 rdata[server, chan]['duck_jam'] = '0'
-                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'duck_jam', rdata[server, chan]['duck_jam'])
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'duck_jam', rdata[server, chan]['duck_jam'])
                 return 1
             else:
                 token = rdata[server, chan]['duck_jam'].split(',')
@@ -1498,7 +1508,7 @@ def ctrl_data(server, channel, user, ctrl_name, args='', data=''):
                             newstring = token[x]
                             continue
                 rdata[server, chan]['duck_jam'] = newstring
-                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'duck_jam', rdata[server, chan]['duck_jam'])
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'duck_jam', rdata[server, chan]['duck_jam'])
                 return 1
     # Camping Counter --------------------------------------------------------------------------------------------------
     # Camping data: username^time^kills
@@ -1518,12 +1528,12 @@ def ctrl_data(server, channel, user, ctrl_name, args='', data=''):
             tok = duser + '^' + str(pc.cputime()) + '^1'
             if rdata[server, chan]['camp_count'] == '0':
                 rdata[server, chan]['camp_count'] = tok
-                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'camp_count', rdata[server, chan]['camp_count'])
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'camp_count', rdata[server, chan]['camp_count'])
                 return 1
             else:
                 tokl = rdata[server, chan]['camp_count']
                 rdata[server, chan]['camp_count'] = tokl + ',' + tok
-                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'camp_count', rdata[server, chan]['camp_count'])
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'camp_count', rdata[server, chan]['camp_count'])
                 return 1
 
         # ctrl_data('serverid', '#channel', 'username', 'camp_count', 'edit', 'data') ----------------------------------
@@ -1538,7 +1548,7 @@ def ctrl_data(server, channel, user, ctrl_name, args='', data=''):
                     newtok = tok[0] + '^' + ntime + '^' + counts
                     reptok = rdata[server, chan]['camp_count'].replace(token[x], newtok)
                     rdata[server, chan]['camp_count'] = reptok
-                    pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'camp_count', reptok)
+                    pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'camp_count', reptok)
                     return 1
                 else:
                     continue
@@ -1549,7 +1559,7 @@ def ctrl_data(server, channel, user, ctrl_name, args='', data=''):
         if args == 'rem':
             if pc.numtok(rdata[server, chan]['camp_count'], ',') == 1:
                 rdata[server, chan]['camp_count'] = '0'
-                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'camp_count', '0')
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'camp_count', '0')
                 return 1
             else:
                 token = rdata[server, chan]['camp_count'].split(',')
@@ -1565,7 +1575,7 @@ def ctrl_data(server, channel, user, ctrl_name, args='', data=''):
                             newstring = token[x]
                             continue
                 rdata[server, chan]['camp_count'] = newstring
-                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'camp_count', newstring)
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'camp_count', newstring)
                 return 1
 
     # Gun Confiscation -------------------------------------------------------------------------------------------------
@@ -1583,12 +1593,12 @@ def ctrl_data(server, channel, user, ctrl_name, args='', data=''):
         if args == 'add':
             if rdata[server, chan]['confiscated'] == '0':
                 rdata[server, chan]['confiscated'] = duser
-                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'confiscated', rdata[server, chan]['confiscated'])
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'confiscated', rdata[server, chan]['confiscated'])
                 return 1
             else:
                 tok = rdata[server, chan]['confiscated']
                 rdata[server, chan]['confiscated'] = tok + ',' + duser
-                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'confiscated', rdata[server, chan]['confiscated'])
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'confiscated', rdata[server, chan]['confiscated'])
                 return 1
         # ctrl_data('serverid', '#channel', 'username', 'confiscated', 'rem') ------------------------------------------
         # remove user name from confiscated list, if it exists in the list
@@ -1596,7 +1606,7 @@ def ctrl_data(server, channel, user, ctrl_name, args='', data=''):
             # print(f'HERE 932')
             if rdata[server, chan]['confiscated'] == duser:
                 rdata[server, chan]['confiscated'] = '0'
-                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'confiscated', rdata[server, chan]['confiscated'])
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'confiscated', rdata[server, chan]['confiscated'])
                 # print(f'HERE 932')
                 return 1
             else:
@@ -1613,13 +1623,13 @@ def ctrl_data(server, channel, user, ctrl_name, args='', data=''):
                             newstring = token[x]
                             continue
                 rdata[server, chan]['confiscated'] = newstring
-                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'confiscated', rdata[server, chan]['confiscated'])
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'confiscated', rdata[server, chan]['confiscated'])
                 return 1
         # ctrl_data('serverid', '#channel', 'username', 'confiscated', 'clear')
         # Clears the confiscation list (for !rearm all)
         if args == 'clear':
             rdata[server, chan]['confiscated'] = '0'
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'confiscated', rdata[server, chan]['confiscated'])
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'confiscated', rdata[server, chan]['confiscated'])
             return 1
         return 0
 
@@ -1659,7 +1669,7 @@ def ctrl_data(server, channel, user, ctrl_name, args='', data=''):
             if rdata[server, chan]['duck_bomb'] != '0':
                 tok = user + '^' + str(bombs) + '^' + str(pc.cputime())
                 token = rdata[server, chan]['duck_bomb'] + ',' + tok
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'duck_bomb', token)
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'duck_bomb', token)
             rdata[server, chan]['duck_bomb'] = token
             return 1
 
@@ -1675,7 +1685,7 @@ def ctrl_data(server, channel, user, ctrl_name, args='', data=''):
                     newtok = tok[0] + '^' + bombs + '^' + tok[2]
                     reptok = rdata[server, chan]['duck_bomb'].replace(token[x], newtok)
                     rdata[server, chan]['duck_bomb'] = reptok
-                    pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'duck_bomb', reptok)
+                    pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'duck_bomb', reptok)
                     return 1
                 else:
                     continue
@@ -1757,7 +1767,7 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                                     newtok = '0'
                                 else:
                                     newtok = pc.deltok(rdata[server, chan]['fatigue'], tok[x], ',')
-                                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'fatigue', newtok)
+                                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'fatigue', newtok)
                                 rdata[server, chan]['fatigue'] = newtok
                                 duckinfo(server, dchannel, user, 'fatigue', '0^' + str(pc.cputime()))
                                 break
@@ -1773,7 +1783,7 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                                     newtok = '0'
                                 else:
                                     newtok = pc.deltok(rdata[server, chan][listitem[z]], tok[x], ',')
-                                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, listitem[z], newtok)
+                                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, listitem[z], newtok)
                                 rdata[server, chan][listitem[z]] = newtok
                                 # pc.privmsg(server, channel, pc.gettok(tok[x], 0, '^') + ' > Hunting penalty for illegal camping has been lifted! \x034Make sure to buy a Camping Permit next time!\x03 \x033[Camp Grounds]\x03')
                                 break
@@ -1790,7 +1800,7 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                                     newtok = '0'
                                 else:
                                     newtok = pc.deltok(rdata[server, chan][listitem[z]], tok[x], ',')
-                                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, listitem[z], newtok)
+                                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, listitem[z], newtok)
                                 rdata[server, chan][listitem[z]] = newtok
                                 break
                         # ##################################################################################################
@@ -1801,7 +1811,7 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                                 newtok = '0'
                             else:
                                 newtok = pc.deltok(rdata[server, chan][listitem[z]], tok[x], ',')
-                            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, listitem[z], newtok)
+                            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, listitem[z], newtok)
                             rdata[server, chan][listitem[z]] = newtok
                             break
                         # 8 hour items ---------------------------------------------------------------------------------
@@ -1810,7 +1820,7 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                                 newtok = '0'
                             else:
                                 newtok = pc.deltok(rdata[server, chan][listitem[z]], tok[x], ',')
-                            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, listitem[z], newtok)
+                            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, listitem[z], newtok)
                             rdata[server, chan][listitem[z]] = newtok
                             break
                         # 24 hour items --------------------------------------------------------------------------------
@@ -1821,7 +1831,7 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                                     newtok = '0'
                                 else:
                                     newtok = pc.deltok(rdata[server, chan][listitem[z]], tok[x], ',')
-                                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, listitem[z], newtok)
+                                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, listitem[z], newtok)
                                 rdata[server, chan][listitem[z]] = newtok
                                 break
                             # duck_bomb
@@ -1830,7 +1840,7 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                                     newtok = '0'
                                 else:
                                     newtok = pc.deltok(rdata[server, chan][listitem[z]], tok[x], ',')
-                                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, listitem[z], newtok)
+                                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, listitem[z], newtok)
                                 rdata[server, chan][listitem[z]] = newtok
                                 break
                         else:
@@ -1855,7 +1865,7 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                             newtok = '0'
                         else:
                             newtok = pc.deltok(rdata[server, chan][eff_name], tok[x], ',')
-                        pc.cnfwrite('duckhunt.cnf', server + '_' + chan, eff_name, newtok)
+                        pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, eff_name, newtok)
                         rdata[server, chan][eff_name] = newtok
                         return
                     if eff_type(eff_name) == 2 and timem >= pc.hour24():
@@ -1863,7 +1873,7 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                             newtok = '0'
                         else:
                             newtok = pc.deltok(rdata[server, chan][eff_name], tok[x], ',')
-                        pc.cnfwrite('duckhunt.cnf', server + '_' + chan, eff_name, newtok)
+                        pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, eff_name, newtok)
                         rdata[server, chan][eff_name] = newtok
                         return
                     if eff_type(eff_name) == 3 and timem >= pc.hour24():
@@ -1871,7 +1881,7 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                             newtok = '0'
                         else:
                             newtok = pc.deltok(rdata[server, chan][eff_name], tok[x], ',')
-                        pc.cnfwrite('duckhunt.cnf', server + '_' + chan, eff_name, newtok)
+                        pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, eff_name, newtok)
                         rdata[server, chan][eff_name] = newtok
                     if eff_type(eff_name) >= 4:
                         return
@@ -1883,7 +1893,7 @@ def time_data(server, channel, user, eff_name, args='', data=''):
     # Clears the specified list
     if args == 'clear':
         rdata[server, chan][eff_name] = '0'
-        pc.cnfwrite('duckhunt.cnf', server + '_' + chan, eff_name, '0')
+        pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, eff_name, '0')
         return
 
     # time_data('serverid', '#channel', 'username', 'effect name', 'add', <data='new data'>)
@@ -1894,7 +1904,7 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                 rdata[server, chan][eff_name] = rdata[server, chan][eff_name] + ',' + user + '^' + str(pc.cputime())
             else:
                 rdata[server, chan][eff_name] = user + '^' + str(pc.cputime())
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, eff_name, rdata[server, chan][eff_name])
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, eff_name, rdata[server, chan][eff_name])
             return
 
         if eff_type(eff_name) == 3:
@@ -1902,7 +1912,7 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                 rdata[server, chan][eff_name] = rdata[server, chan][eff_name] + ',' + user + '^' + str(pc.cputime()) + '^' + str(data)
             else:
                 rdata[server, chan][eff_name] = user + '^' + str(pc.cputime()) + '^' + str(data)
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, eff_name, rdata[server, chan][eff_name])
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, eff_name, rdata[server, chan][eff_name])
             return
 
         if eff_type(eff_name) == 4:
@@ -1914,7 +1924,7 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                 rdata[server, chan][eff_name] = rdata[server, chan][eff_name] + ',' + user + '^' + str(data)
             else:
                 rdata[server, chan][eff_name] = user + '^' + str(data)
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, eff_name, rdata[server, chan][eff_name])
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, eff_name, rdata[server, chan][eff_name])
             return
 
         if eff_type(eff_name) == 6:
@@ -1929,7 +1939,7 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                 token = rdata[server, chan][eff_name] + ',' + user
             if rdata[server, chan][eff_name] == '0':
                 token = user
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, eff_name, token)
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, eff_name, token)
             rdata[server, chan][eff_name] = token
             return
 
@@ -1950,11 +1960,11 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                         newt = newt + ',' + tokn[x]
                         continue
             rdata[server, chan][eff_name] = newt
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, eff_name, rdata[server, chan][eff_name])
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, eff_name, rdata[server, chan][eff_name])
             return
         else:
             rdata[server, chan][eff_name] = '0'
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, eff_name, '0')
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, eff_name, '0')
             return
 
 # This is for time_data() to determine effect type.
@@ -1990,11 +2000,10 @@ def eff_type(eff_name):
 # Returns or changes specified user Duck stats
 def duckinfo(server, channel, user, req, data=''):
     global rdata
-
     chan = str(channel.replace('#', '')).lower()
     userl = user
     sect = server + '_' + chan + '_ducks'
-    cnfdat = pc.cnfread('duckhunt.cnf', sect, userl)
+    cnfdat = pc.cnfread(rdata[server, chan]['config_file'], sect, userl)
 
     # Ammo rounds, maxrounds, mags, maxmags ----------------------------------------------------------------------------
 
@@ -2007,7 +2016,7 @@ def duckinfo(server, channel, user, req, data=''):
         else:
             ammo = pc.reptok(ammo, 0, '?', str(data))
             newdat = pc.reptok(cnfdat, 0, ',', ammo)
-            pc.cnfwrite('duckhunt.cnf', sect, userl, newdat)
+            pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, newdat)
             return 1
 
     # Max Rounds - ammo is Rounds?MaxRounds?Mags?MaxMags ---------------------------------------------------------------
@@ -2019,7 +2028,7 @@ def duckinfo(server, channel, user, req, data=''):
         else:
             ammo = pc.reptok(ammo, 2, '?', str(data))
             newdat = pc.reptok(cnfdat, 0, ',', ammo)
-            pc.cnfwrite('duckhunt.cnf', sect, userl, newdat)
+            pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, newdat)
             return 1
     # Magazines - ammo is Rounds?MaxRounds?Mags?MaxMags ----------------------------------------------------------------
     # duckinfo('serverid', '#channel', 'username', 'ammo-m', <data=''>
@@ -2030,7 +2039,7 @@ def duckinfo(server, channel, user, req, data=''):
         else:
             ammo = pc.reptok(ammo, 1, '?', str(data))
             newdat = pc.reptok(cnfdat, 0, ',', ammo)
-            pc.cnfwrite('duckhunt.cnf', sect, userl, newdat)
+            pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, newdat)
             return 1
     # Max Magazines - ammo is Rounds?MaxRounds?Mags?MaxMags ------------------------------------------------------------
     # duckinfo('serverid', '#channel', 'username', 'ammo-mr', <data=''>
@@ -2041,7 +2050,7 @@ def duckinfo(server, channel, user, req, data=''):
         else:
             ammo = pc.reptok(ammo, 3, '?', str(data))
             newdat = pc.reptok(cnfdat, 0, ',', ammo)
-            pc.cnfwrite('duckhunt.cnf', sect, userl, newdat)
+            pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, newdat)
             return 1
 
     # Bread bread, maxbread, load, maxloaf -----------------------------------------------------------------------------
@@ -2053,7 +2062,7 @@ def duckinfo(server, channel, user, req, data=''):
         else:
             bread = pc.reptok(bread, 0, '?', str(data))
             newdat = pc.reptok(cnfdat, 11, ',', bread)
-            pc.cnfwrite('duckhunt.cnf', sect, userl, newdat)
+            pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, newdat)
             return 1
     if req == 'bread-mb':
         bread = pc.gettok(cnfdat, 11, ',')
@@ -2062,7 +2071,7 @@ def duckinfo(server, channel, user, req, data=''):
         else:
             bread = pc.reptok(bread, 1, '?', str(data))
             newdat = pc.reptok(cnfdat, 11, ',', bread)
-            pc.cnfwrite('duckhunt.cnf', sect, userl, newdat)
+            pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, newdat)
             return 1
     if req == 'bread-l':
         bread = pc.gettok(cnfdat, 11, ',')
@@ -2071,7 +2080,7 @@ def duckinfo(server, channel, user, req, data=''):
         else:
             bread = pc.reptok(bread, 2, '?', str(data))
             newdat = pc.reptok(cnfdat, 11, ',', bread)
-            pc.cnfwrite('duckhunt.cnf', sect, userl, newdat)
+            pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, newdat)
             return 1
     if req == 'bread-ml':
         bread = pc.gettok(cnfdat, 11, ',')
@@ -2080,7 +2089,7 @@ def duckinfo(server, channel, user, req, data=''):
         else:
             bread = pc.reptok(bread, 3, '?', str(data))
             newdat = pc.reptok(cnfdat, 11, ',', bread)
-            pc.cnfwrite('duckhunt.cnf', sect, userl, newdat)
+            pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, newdat)
             return 1
 
     # Player stats info ------------------------------------------------------------------------------------------------
@@ -2089,49 +2098,49 @@ def duckinfo(server, channel, user, req, data=''):
             return pc.gettok(cnfdat, 1, ',')
         else:
             duck_info = pc.reptok(cnfdat, 1, ',', str(str(data)))
-            pc.cnfwrite('duckhunt.cnf', sect, userl, duck_info)
+            pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
             return 1
     if req == 'gducks':
         if data == '':
             return pc.gettok(cnfdat, 2, ',')
         else:
             duck_info = pc.reptok(cnfdat, 2, ',', str(data))
-            pc.cnfwrite('duckhunt.cnf', sect, userl, duck_info)
+            pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
             return 1
     if req == 'xp':
         if data == '':
             return pc.gettok(cnfdat, 3, ',')
         else:
             duck_info = pc.reptok(cnfdat, 3, ',', str(str(data)))
-            pc.cnfwrite('duckhunt.cnf', sect, userl, duck_info)
+            pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
             return 1
     if req == 'level':
         if data == '':
             return pc.gettok(cnfdat, 4, ',')
         else:
             duck_info = pc.reptok(cnfdat, 4, ',', str(data))
-            pc.cnfwrite('duckhunt.cnf', sect, userl, duck_info)
+            pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
             return 1
     if req == 'levelup':
         if data == '':
             return pc.gettok(cnfdat, 5, ',')
         else:
             duck_info = pc.reptok(cnfdat, 5, ',', str(data))
-            pc.cnfwrite('duckhunt.cnf', sect, userl, duck_info)
+            pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
             return 1
     if req == 'effects' or req == 'fatigue':  # NOT USED AS EFFECTS TO BE RE-ASSIGNED AS FATIGUE
         if data == '':
             return pc.gettok(cnfdat, 6, ',')
         else:
             duck_info = pc.reptok(cnfdat, 6, ',', str(data))
-            pc.cnfwrite('duckhunt.cnf', sect, userl, duck_info)
+            pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
             return 1
     if req == 'inv':  # NOT USED TO BE RE-ASSIGNED
         if data == '':
             return pc.gettok(cnfdat, 7, ',')
         else:
             duck_info = pc.reptok(cnfdat, 7, ',', str(data))
-            pc.cnfwrite('duckhunt.cnf', sect, userl, duck_info)
+            pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
             return 1
     # guninfo =
     if req == 'guninfo':
@@ -2139,36 +2148,28 @@ def duckinfo(server, channel, user, req, data=''):
             return pc.gettok(cnfdat, 8, ',')
         else:
             duck_info = pc.reptok(cnfdat, 8, ',', str(data))
-            pc.cnfwrite('duckhunt.cnf', sect, userl, duck_info)
+            pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
             return 1
     if req == 'best':
         if data == '':
             return pc.gettok(cnfdat, 9, ',')
         else:
             duck_info = pc.reptok(cnfdat, 9, ',', str(data))
-            pc.cnfwrite('duckhunt.cnf', sect, userl, duck_info)
+            pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
             return 1
     if req == 'accidents':
         if data == '':
             return pc.gettok(cnfdat, 10, ',')
         else:
             duck_info = pc.reptok(cnfdat, 10, ',', str(data))
-            pc.cnfwrite('duckhunt.cnf', sect, userl, duck_info)
+            pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
             return 1
-    # TO BE DELETED see 'bread-b/-mb/-l/-lm'
-    # if req == 'bread':
-    #    if data == '':
-    #        return pc.gettok(cnfdat, 11, ',')
-    #    else:
-    #        duck_info = pc.reptok(cnfdat, 11, ',', str(data))
-    #        pc.cnfwrite('duckhunt.cnf', sect, userl, duck_info)
-    #        return 1
     if req == 'friend':
         if data == '':
             return pc.gettok(cnfdat, 12, ',')
         else:
             duck_info = pc.reptok(cnfdat, 12, ',', str(data))
-            pc.cnfwrite('duckhunt.cnf', sect, userl, duck_info)
+            pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
             return 1
     return -1
 
@@ -2182,7 +2183,6 @@ def inveffect(server, channel, user):
     huntingbag = '0'
     effects = '0'
     duser = user.decode()
-    # duser = duser.lower()
 
     # check time data for user
     time_data(server, channel, duser, 'all-time')
@@ -2324,7 +2324,7 @@ def inveffect(server, channel, user):
 # ===> inveffect
 
 # duckstats function ===================================================================================================
-async def duckstats(server, channel, user, ruser, ext=''):
+def duckstats(server, channel, user, ruser, ext=''):
     global rdata
     dchannel = channel.decode()
     dchannel = dchannel.lower()
@@ -2333,7 +2333,6 @@ async def duckstats(server, channel, user, ruser, ext=''):
         druser = ruser.decode()
     except TypeError:
         druser = ruser
-
     chan = str(dchannel.replace('#', '')).lower()
 
     # prep stats
@@ -2417,9 +2416,8 @@ async def duckstats(server, channel, user, ruser, ext=''):
 # Shop menu ============================================================================================================
 # Builds specific menu and sends the shop menu to user
 # ======================================================================================================================
-async def shopmenu(server, channel, user, opt=''):
+def shopmenu(server, channel, user):
     global rdata
-
     dchannel = channel.decode()
     dchannel = dchannel.lower()
     # chan = dchannel.replace('#', '')
@@ -2550,7 +2548,6 @@ async def shopmenu(server, channel, user, opt=''):
 # Item prices vary based on user stats, for !shop
 def shopprice(server, channel, user, itemid):
     global rdata
-
     dchannel = channel.decode()
     dchannel = dchannel.lower()
     duser = user.decode()
@@ -2710,7 +2707,7 @@ def shopprice(server, channel, user, itemid):
 
 # shop =================================================================================================================
 # controls the purchasing and interaction of the shop
-async def shop(server, channel, user, itemid, target=''):
+def shop(server, channel, user, itemid, target=''):
     global rdata
     # dchannel = str(channel.decode()).lower()
     dchannel = channel.decode()
@@ -2771,7 +2768,7 @@ async def shop(server, channel, user, itemid, target=''):
                 pc.privmsg_(server, channel, target.decode() + ' is not in the channel.')
                 return
             # target hasnt played yet ----------------------------------------------------------------------------------
-            if pc.cnfexists('duckhunt.cnf', dsect, dtarget) is False:
+            if pc.cnfexists(rdata[server, chan]['config_file'], dsect, dtarget) is False:
                 pc.notice_(server, user, target.decode() + " hasn't played yet.")
                 return
 
@@ -2862,7 +2859,7 @@ async def shop(server, channel, user, itemid, target=''):
             newtok = '0'
         else:
             newtok = pc.deltok(rdata[server, chan]['confiscated'], duser, ',')
-        pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'confiscated', newtok)
+        pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'confiscated', newtok)
         rdata[server, chan]['confiscated'] = newtok
         pc.privmsg_(server, channel, '\x01ACTION returns ' + user.decode() + "'s gun.\x01")
         return
@@ -3289,7 +3286,7 @@ async def shop(server, channel, user, itemid, target=''):
                 newtok = '0'
             else:
                 newtok = pc.deltok(rdata[server, chan]['fatigue'], tokx, ',')
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'fatigue', newtok)
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'fatigue', newtok)
             rdata[server, chan]['fatigue'] = newtok
         # removes 50 fatigue points
         if int(fatigue) <= 50:
@@ -3304,9 +3301,8 @@ async def shop(server, channel, user, itemid, target=''):
 
 # ======================================================================================================================
 # Swimming !swim
-async def swim(server, channel, user):
+def swim(server, channel, user):
     global rdata
-
     dchannel = channel.decode()
     dchannel = dchannel.lower()
     chan = dchannel.replace('#', '')
@@ -3351,7 +3347,6 @@ async def swim(server, channel, user):
 # Shooting guns
 
 # !bang ----------------------------------------------------------------------------------------------------------------
-# async def bang(server, channel, user):
 def bang(server, channel, user):
     global rdata
     dchannel = channel.decode()
@@ -3364,11 +3359,11 @@ def bang(server, channel, user):
     # b'playername' = Rounds?Mags?MaxRounds?MaxMags,Ducks,GoldenDucks,xp,level,levelup,
     #                 fatigue,notusedanymore,Accuracy?Reliability?MaxReliability,BestTime,
     #                 Accidents,Bread?MaxBread,Loaf,MaxLoaf,DuckFriends
-    if not pc.cnfexists('duckhunt.cnf', server + '_' + chan + '_ducks', duser):
+    if not pc.cnfexists(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', duser):
         dinfo = '7?3?7?3,0,0,0,1,200,0^' + str(pc.cputime()) + ',0,75?80?80,0,0,12?12?3?3,0'
-        pc.cnfwrite('duckhunt.cnf', server + '_' + chan + '_ducks', duser, str(dinfo))
-        if pc.cnfread('duckhunt.cnf', server + '_' + chan + '_ducks', 'cache') == '0':
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan + '_ducks', 'cache', '1')
+        pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', duser, str(dinfo))
+        if pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', 'cache') == '0':
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', 'cache', '1')
 
     # gun is confiscated or player has disarm penalty
     if pc.iistok(rdata[server, chan]['confiscated'], duser, ',') is True or pc.iistok(rdata[server, chan]['disarmed'], duser, ',') is True:
@@ -3489,7 +3484,7 @@ def bang(server, channel, user):
             if pc.iistok(rdata[server, chan]['jammed'], duser, ',') is False:
                 newdat = rdata[server, chan]['jammed'] + ',' + duser
                 rdata[server, chan]['jammed'] = newdat
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'jammed', rdata[server, chan]['jammed'])
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'jammed', rdata[server, chan]['jammed'])
             pc.privmsg_(server, channel, user.decode() + ' > \x0314*CLACK*\x03     \x034Your gun is jammed, you must reload to unjam it...\x03')
             return
 
@@ -3497,7 +3492,7 @@ def bang(server, channel, user):
     if pc.iistok(rdata[server, chan]['duck_jam'], duser, ',') is True:
         if pc.numtok(rdata[server, chan]['duck_jam'], ',') == 1:
             rdata[server, chan]['duck_jam'] = '0'
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'duck_jam', rdata[server, chan]['duck_jam'])
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'duck_jam', rdata[server, chan]['duck_jam'])
         else:
             token = rdata[server, chan]['duck_jam'].split(',')
             newstring = '0'
@@ -3511,7 +3506,7 @@ def bang(server, channel, user):
                     newstring = newstring + ',' + token[x]
                     continue
             rdata[server, chan]['duck_jam'] = newstring
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'duck_jam', rdata[server, chan]['duck_jam'])
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'duck_jam', rdata[server, chan]['duck_jam'])
 
     # fired a round
     rounds = int(rounds) - 1
@@ -3605,7 +3600,7 @@ def bang(server, channel, user):
                 rdata[server, chan]['fatigue'] = duser + '^' + str(pc.cputime())
             else:
                 rdata[server, chan]['fatigue'] = rdata[server, chan]['fatigue'] + ',' + user + '^' + str(pc.cputime())
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'fatigue', rdata[server, chan]['fatigue'])
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'fatigue', rdata[server, chan]['fatigue'])
             pc.privmsg_(server, channel, user.decode() + ' > \x034has collapsed from fatigue and must rest for 6 hours!   [-' + str(rxp) + ' xp]\x03')
             return
 
@@ -3662,7 +3657,7 @@ def bang(server, channel, user):
                     rdata[server, chan]['confiscated'] = newdata
                 if rdata[server, chan]['confiscated'] == '0':
                     rdata[server, chan]['confiscated'] = duser
-                pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'confiscated', rdata[server, chan]['confiscated'])
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'confiscated', rdata[server, chan]['confiscated'])
                 pc.privmsg_(server, channel, user.decode() + ' > \x0314*BANG*\x034     Missed due to being debazzled. [-' + str(rxp) + ' xp] [GUN CONFISCATED: ' + damage + ']\x03')
                 return
 
@@ -3930,7 +3925,7 @@ def bang(server, channel, user):
                             rdata[server, chan]['illegal_camping'] = cctok
                         else:
                             rdata[server, chan]['illegal_camping'] = rdata[server, chan]['illegal_camping'] + ',' + cctok
-                        pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
+                        pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
                         pc.privmsg_(server, channel, user.decode() + ' > Has been penalized for illegal camping! ' + user.decode() + ' cannot hunt for 2 hours. \x034[Illegal Camping]')
 
                 # add 5 fatigue points for normal duck
@@ -4063,7 +4058,7 @@ def bang(server, channel, user):
                                 rdata[server, chan]['illegal_camping'] = cctok
                             else:
                                 rdata[server, chan]['illegal_camping'] = rdata[server, chan]['illegal_camping'] + ',' + cctok
-                            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
+                            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
                             pc.privmsg_(server, channel, user.decode() + ' > Has been penalized for illegal camping! ' + user.decode() + ' cannot hunt for 2 hours. \x034[Illegal Camping]')
 
                     # add 10 fatigue points for golden duck
@@ -4198,7 +4193,6 @@ def bang(server, channel, user):
         return
 
 # !reload --------------------------------------------------------------------------------------------------------------
-# async def reload(server, channel, user):
 def reload(server, channel, user):
     global rdata
     dchannel = channel.decode()
@@ -4237,7 +4231,7 @@ def reload(server, channel, user):
         return
 
     # new users with no stats
-    if pc.cnfexists('duckhunt.cnf', server + '_' + chan + '_ducks', duser) is False:
+    if pc.cnfexists(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', duser) is False:
         if game_rules(server, dchannel, 'infammo') == 'on':
             pc.privmsg_(server, channel, user.decode() + " > Your gun doesn't need to be reloaded. | Rounds: 7/7 | Magazines: \x02\x033Inf\x02\x03")
             return
@@ -4279,7 +4273,6 @@ def reload(server, channel, user):
 
 # ----------------------------------------------------------------------------------------------------------------------
 # !bef function
-# async def bef(server, channel, user):
 def bef(server, channel, user):
     global rdata
     dchannel = channel.decode()
@@ -4292,11 +4285,11 @@ def bef(server, channel, user):
     # b'playername' = Rounds?Mags?MaxRounds?MaxMags,Ducks,GoldenDucks,xp,level,levelup,
     #                 notusedanymore,notusedanymore,Accuracy?Reliability?MaxReliability,BestTime,
     #                 Accidents,Bread?MaxBread,Loaf,MaxLoaf,DuckFriends
-    if not pc.cnfexists('duckhunt.cnf', server + '_' + chan + '_ducks', duser):
+    if not pc.cnfexists(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', duser):
         dinfo = '7?3?7?3,0,0,0,1,200,0^' + str(pc.cputime()) + ',0,75?80?80,0,0,12?12?3?3,0'
-        pc.cnfwrite('duckhunt.cnf', server + '_' + chan + '_ducks', duser, str(dinfo))
-        if pc.cnfread('duckhunt.cnf', server + '_' + chan + '_ducks', 'cache') == '0':
-            pc.cnfwrite('duckhunt.cnf', dsect, 'cache', '1')  # ???
+        pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', duser, str(dinfo))
+        if pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', 'cache') == '0':
+            pc.cnfwrite(rdata[server, chan]['config_file'], dsect, 'cache', '1')  # ???
 
     # check all timed items/effects
     time_data(server, dchannel, duser, 'all-time')
@@ -4458,7 +4451,7 @@ def bef(server, channel, user):
                 rdata[server, chan]['fatigue'] = duser + '^' + str(pc.cputime())
             else:
                 rdata[server, chan]['fatigue'] = rdata[server, chan]['fatigue'] + ',' + user + '^' + str(pc.cputime())
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'fatigue', rdata[server, chan]['fatigue'])
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'fatigue', rdata[server, chan]['fatigue'])
             pc.privmsg_(server, channel, user.decode() + ' > \x034has collapsed from fatigue and must rest for 6 hours!   [-' + str(rxp) + ' xp]\x03')
             return
 
@@ -4655,7 +4648,7 @@ def bef(server, channel, user):
                             rdata[server, chan]['illegal_camping'] = cctok
                         else:
                             rdata[server, chan]['illegal_camping'] = rdata[server, chan]['illegal_camping'] + ',' + cctok
-                        pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
+                        pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
                         pc.privmsg_(server, channel, user.decode() + ' > Has been penalized for illegal camping! ' + user.decode() + ' cannot hunt for 2 hours. \x034[Illegal Camping]')
 
                 # add 5 fatigue points for normal duck
@@ -4788,7 +4781,7 @@ def bef(server, channel, user):
                                 rdata[server, chan]['illegal_camping'] = cctok
                             else:
                                 rdata[server, chan]['illegal_camping'] = rdata[server, chan]['illegal_camping'] + ',' + cctok
-                            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
+                            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
                             pc.privmsg_(server, channel, user.decode() + ' > Has been penalized for illegal camping! ' + user.decode() + ' cannot hunt for 2 hours. \x034[Illegal Camping]')
 
                     # add 10 fatigue points for golden duck
@@ -4798,7 +4791,6 @@ def bef(server, channel, user):
 
 # !bread or !reloaf ----------------------------------------------------------------------------------------------------
 # reloaf('serverid', b'#Channel', b'Username')
-# async def reloaf(server, channel, user):
 def reloaf(server, channel, user):
     global rdata
     dchannel = channel.decode()
@@ -4821,7 +4813,7 @@ def reloaf(server, channel, user):
         return
 
     # bread doesn't need to be reloaded (new player)
-    if not pc.cnfexists('duckhunt.cnf', server + '_' + chan + '_ducks', duser):
+    if not pc.cnfexists(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', duser):
         if game_rules(server, dchannel, 'infammo') == 'on':
             pc.privmsg_(server, channel, user.decode() + " > Your bread doesn't need to be reloaded. | Bread Pieces: 12/12 | Loaf: \x02\x033Inf\x02\x03")
             return
@@ -4882,7 +4874,7 @@ def duck_bomb(server, channel, user, target):
     time_data(server, channel, user, 'all-time')
 
     # user hasn't played
-    if pc.cnfexists('duckhunt.cnf', dsect, user) is False:
+    if pc.cnfexists(rdata[server, chan]['config_file'], dsect, user) is False:
         pc.privmsg_(server, channel.encode(), user + ' > You have not played yet.')
         return
 
@@ -4912,7 +4904,7 @@ def duck_bomb(server, channel, user, target):
     #    return
 
     # target hasn't played
-    if pc.cnfexists('duckhunt.cnf', dsect, target) is False:
+    if pc.cnfexists(rdata[server, chan]['config_file'], dsect, target) is False:
         pc.privmsg_(server, channel.encode(), bytes(target + " has not played yet.", 'utf-8'))
         return
 
@@ -4956,7 +4948,7 @@ def duck_bomb(server, channel, user, target):
             blist = target
         else:
             blist = rdata[server, chan]['bombed'] + ',' + target
-        pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'bombed', blist)
+        pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'bombed', blist)
         rdata[server, chan]['bombed'] = blist
         msg = user + ' > Calls in a duck bombing on ' + target + '. A squadron of 50 duck friends, flying in formation, swoop down dropping gooey duck bombs all over ' + target + ' causing the player to require new clothes!'
         pc.privmsg_(server, channel.encode(), msg)
@@ -4987,9 +4979,6 @@ def duck_bomb(server, channel, user, target):
 # dbcount('serverid', '#channel', 'username')
 # returns the total number of duck bombs a user has
 def dbcount(server, channel, user):
-
-    global rdata
-
     # user must exist in [server_chan_ducks]
     friend = duckinfo(server, channel, user, 'friend')
     friend = int(friend)
@@ -5024,18 +5013,19 @@ def dbcount(server, channel, user):
 # !topduck -------------------------------------------------------------------------------------------------------------
 # topduck('serverid', b'#channel')
 def topduck(server, channel):
+    global rdata
     dchannel = channel.decode()
     dchannel = dchannel.lower()
     chan = dchannel.replace('#', '')
     sect = server + '_' + chan + '_ducks'
 
     # No players
-    if pc.cnfread('duckhunt.cnf', sect, 'cache') == '0':
+    if pc.cnfread(rdata[server, chan]['config_file'], sect, 'cache') == '0':
         pc.privmsg_(server, channel, 'There are currently no top ducks.')
         return
 
     # build token list of players in server_chan_ducks
-    ducklist = cnfbuild('duckhunt.cnf', sect)
+    ducklist = cnfbuild(rdata[server, chan]['config_file'], sect)
 
     # All players have 0 xp
     if ducklist == 'AP_0':
@@ -5084,7 +5074,7 @@ def cnfbuild(filename, section):
         datkey = '%s' % name
         if datkey == 'cache':
             continue
-        tokstring = pc.cnfread('duckhunt.cnf', section, datkey)
+        tokstring = pc.cnfread(filename, section, datkey)
         pxp = str(pc.gettok(tokstring, 3, ',')) + '^' + datkey
         pexp = pc.gettok(tokstring, 3, ',')
         if int(pexp) == 0:
@@ -5104,9 +5094,7 @@ def cnfbuild(filename, section):
 # !lastduck function
 # Last Duck
 def last_duck(server, channel, user):
-
     global rdata
-
     chan = channel.replace('#', '')
 
     if ducksdata(server, channel) <= 0:
@@ -5121,8 +5109,6 @@ def last_duck(server, channel, user):
 # ======================================================================================================================
 # Level Up function
 def level_up(server, channel, user):
-    global rdata
-    # duser = user.lower()
     # pc.privmsg_(server, channel.encode(), 'Level up!')
 
     # increase level by 1
@@ -5203,7 +5189,6 @@ def level_up(server, channel, user):
 # Searching the bushes function
 def bush_search(server, channel, user):
     global rdata
-
     dchannel = channel.lower()
     chan = dchannel.replace('#', '')
 
@@ -5319,7 +5304,7 @@ def user_data(server, channel, user, dataname, args, data=''):
                 rdata[server, chan][dataname] = rdata[server, chan][dataname] + ',' + newdat
             if rdata[server, chan][dataname] == '0':
                 rdata[server, chan][dataname] = newdat
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, dataname, rdata[server, chan][dataname])
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, dataname, rdata[server, chan][dataname])
             return 1
         # finds and overwrites existing entry --------------------------------------------------------------------------
         # user_data('serverid', b'#channel', b'username', 'data_name', 'edit', 'newdata')
@@ -5336,7 +5321,7 @@ def user_data(server, channel, user, dataname, args, data=''):
                     newstring = token[x]
                     continue
             rdata[server, chan][dataname] = newstring
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, dataname, rdata[server, chan][dataname])
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, dataname, rdata[server, chan][dataname])
             return 1
         # finds and removes username's entry from data_name ------------------------------------------------------------
         # user_data('serverid', b'#channel', b'username', 'data_name', 'rem')
@@ -5353,7 +5338,7 @@ def user_data(server, channel, user, dataname, args, data=''):
                     newstring = token[x]
                     continue
             rdata[server, chan][dataname] = newstring
-            pc.cnfwrite('duckhunt.cnf', server + '_' + chan, dataname, rdata[server, chan][dataname])
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, dataname, rdata[server, chan][dataname])
             return 1
 
 # ======================================================================================================================
@@ -5439,7 +5424,7 @@ def t_stat(server, channel, args, ext=''):
     rdata[server, chan]['top_stat']['monthly'] = str(top_month[0]) + '^' + str(top_month[1])
     rdata[server, chan]['top_stat']['totalstat'] = str(top_total[0]) + '^' + str(top_total[1])
     newstatok = rdata[server, chan]['top_stat']['daily'] + ',' + rdata[server, chan]['top_stat']['weekly'] + ',' + rdata[server, chan]['top_stat']['monthly'] + ',' + rdata[server, chan]['top_stat']['totalstat']
-    pc.cnfwrite('duckhunt.cnf', server + '_' + chan, 'topstat', newstatok)
+    pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'topstat', newstatok)
     return
 
 # ======================================================================================================================
@@ -5447,51 +5432,50 @@ def t_stat(server, channel, args, ext=''):
 # Resets player stats and tshot stats
 def stat_reset(server, channel):
     global rdata
+    chan = channel.lower()
+    chan = chan.replace('#', '')
 
     parser = RawConfigParser()
     parser.optionxform = str
-    parser.read('duckhunt.cnf')
+    parser.read(rdata[server, chan]['config_file'])
 
-    chan = channel.lower()
-    chan = chan.replace('#', '')
     sect = server + '_' + chan + '_ducks'
 
     # clear player stats
     for name, value in parser.items(sect):
         datkey = '%s' % name
-        mprint(f'{datkey}')
-        pc.cnfdelete('duckhunt.cnf', sect, str(datkey))
+        pc.cnfdelete(rdata[server, chan]['config_file'], sect, str(datkey))
         continue
-    pc.cnfwrite('duckhunt.cnf', sect, 'cache', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'cache', '0')
 
     # clear special item and effects storage
     sect = server + '_' + chan
-    pc.cnfwrite('duckhunt.cnf', sect, 'bedazzled', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'soggy', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'sabotage', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'expl_ammo', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'gun_grease', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'trigger_lock', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'sunglasses', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'silencer', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'lucky_charm', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'accident_insurance', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'rain_coat', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'duck_bomb', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'bread_lock', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'popcorn', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'confiscated', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'disarmed', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'bombed', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'duck_jam', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'jammed', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'camping_permit', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'camp_count', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'illegal_camping', '0')
-    pc.cnfwrite('duckhunt.cnf', sect, 'fatigue', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'bedazzled', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'soggy', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'sabotage', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'expl_ammo', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'gun_grease', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'trigger_lock', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'sunglasses', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'silencer', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'lucky_charm', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'accident_insurance', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'rain_coat', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'duck_bomb', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'bread_lock', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'popcorn', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'confiscated', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'disarmed', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'bombed', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'duck_jam', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'jammed', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'camping_permit', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'camp_count', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'illegal_camping', '0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'fatigue', '0')
 
     # reset tshot
-    pc.cnfwrite('duckhunt.cnf', sect, 'topstat', '0^0,0^0,0^0,0^0')
+    pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'topstat', '0^0,0^0,0^0,0^0')
 
     return
 
@@ -5501,12 +5485,14 @@ def stat_reset(server, channel):
 # player_case('serverid', '#channel', 'player_name')
 # corrects case sensativity for a specified player name, player name must exist or will return 'err' (see: is_player())
 def player_case(server, channel, user):
-    parser = RawConfigParser()
-    parser.optionxform = str
-    parser.read('duckhunt.cnf')
+    global rdata
     chan = channel.decode()
     chan = chan.replace('#', '')
     chan = chan.lower()
+
+    parser = RawConfigParser()
+    parser.optionxform = str
+    parser.read(rdata[server, chan]['config_file'])
     duser = user.decode()
     section = server + '_' + chan + '_ducks'
     for name, value in parser.items(section):
@@ -5522,19 +5508,20 @@ def player_case(server, channel, user):
 # is_player('serverid', b'#channel', b'player_name')
 # determines if player exists even if case sensativity does not match
 def is_player(server, channel, user):
+    global rdata
     chan = channel.decode()
     chan = chan.replace('#', '')
     chan = chan.lower()
     duser = user.decode()
     section = server + '_' + chan + '_ducks'
 
-    if pc.cnfexists('duckhunt.cnf', section, duser) is True:
+    if pc.cnfexists(rdata[server, chan]['config_file'], section, duser) is True:
         return True
 
     else:
         parser = RawConfigParser()
         parser.optionxform = str
-        parser.read('duckhunt.cnf')
+        parser.read(rdata[server, chan]['config_file'])
         for name, value in parser.items(section):
             datkey = '%s' % name
             if datkey.lower() == duser.lower():
@@ -5547,10 +5534,7 @@ def is_player(server, channel, user):
 # player_boost('serverid', b'#channel', 'player_name')
 def player_boost(server, channel, player):
     global rdata
-
     dchannel = channel.decode()
-    chan = dchannel.replace('#', '')
-    chan = chan.lower()
 
     if game_rules(server, dchannel, 'bang') == 'on':
         duckinfo(server, dchannel, player, 'ammo-r', '7')
@@ -5565,4 +5549,63 @@ def player_boost(server, channel, player):
     xp = xp + 100
     duckinfo(server, dchannel, player, 'xp', str(xp))
     pc.privmsg_(server, channel, player + ' > Received a boost from the admins!    \x033[BOOST: +100 xp]\x03')
+    return
+
+# ======================================================================================================================
+# This function creates a new config file for each server_channel instance
+# (part of configparser duplicate entry error fix)
+def config_build(server, channel):
+    global rdata
+    chan = channel.replace('#', '')
+    chan = chan.lower()
+
+    filename = rdata[server, chan]['config_file']
+    chansect = server + '_' + chan  # server_channel
+    ducksect = server + '_' + chan + '_ducks'  # server_channel_ducks
+
+    # these are default settings for v1.9.9+!
+    # [server_channel]
+    pc.cnfwrite(filename, chansect, 'floodcheck', 'on')
+    pc.cnfwrite(filename, chansect, 'maxducks', '6')
+    pc.cnfwrite(filename, chansect, 'spawntime', '1800')
+    pc.cnfwrite(filename, chansect, 'flytime', '1500')
+    pc.cnfwrite(filename, chansect, 'duckexp', '15')
+    pc.cnfwrite(filename, chansect, 'duckfear', '50')
+    pc.cnfwrite(filename, chansect, 'duckgold', '40')
+    pc.cnfwrite(filename, chansect, 'friendrate', '71')
+    pc.cnfwrite(filename, chansect, 'relays', '0')  # Needed for later improvements
+    pc.cnfwrite(filename, chansect, 'rules', '15,20,on,off,on,on,6^1')
+    pc.cnfwrite(filename, chansect, 'bedazzled', '0')
+    pc.cnfwrite(filename, chansect, 'soggy', '0')
+    pc.cnfwrite(filename, chansect, 'sabotage', '0')
+    pc.cnfwrite(filename, chansect, 'expl_ammo', '0')
+    pc.cnfwrite(filename, chansect, 'gun_grease', '0')
+    pc.cnfwrite(filename, chansect, 'trigger_lock', '0')
+    pc.cnfwrite(filename, chansect, 'sunglasses', '0')
+    pc.cnfwrite(filename, chansect, 'silencer', '0')
+    pc.cnfwrite(filename, chansect, 'lucky_charm', '0')
+    pc.cnfwrite(filename, chansect, 'accident_insurance', '0')
+    pc.cnfwrite(filename, chansect, 'rain_coat', '0')
+    pc.cnfwrite(filename, chansect, 'duck_bomb', '0')
+    pc.cnfwrite(filename, chansect, 'bread_lock', '0')
+    pc.cnfwrite(filename, chansect, 'popcorn', '0')
+    pc.cnfwrite(filename, chansect, 'confiscated', '0')
+    pc.cnfwrite(filename, chansect, 'disarmed', '0')  # Needed for later improvements
+    pc.cnfwrite(filename, chansect, 'bombed', '0')
+    pc.cnfwrite(filename, chansect, 'duck_jam', '0')
+    pc.cnfwrite(filename, chansect, 'jammed', '0')
+    pc.cnfwrite(filename, chansect, 'camping_permit', '0')
+    pc.cnfwrite(filename, chansect, 'camp_count', '0')
+    pc.cnfwrite(filename, chansect, 'illegal_camping', '0')
+    pc.cnfwrite(filename, chansect, 'fatigue', '0')
+    pc.cnfwrite(filename, chansect, 'hour', '0')  # Needed for later improvements
+    pc.cnfwrite(filename, chansect, 'day', '0')
+    pc.cnfwrite(filename, chansect, 'week', '0')
+    pc.cnfwrite(filename, chansect, 'month', '0')
+    pc.cnfwrite(filename, chansect, 'year', '0')  # Needed for later improvements
+    pc.cnfwrite(filename, chansect, 'topstat', '0^0,0^0,0^0,0^0')
+
+    # [server_channel_ducks]
+    pc.cnfwrite(filename, ducksect, 'cache', '0')
+
     return
