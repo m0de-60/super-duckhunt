@@ -560,7 +560,7 @@ async def evt_privmsg(server, message):
                 rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
                 # set target player
                 targ = mdata[4].decode()
-                print(f'Bomb!')
+                # print(f'Bomb!')
                 # pc.privmsg_(server, channel, 'Bomb!')
                 duck_bomb(server, dchannel, dusername, targ)
             return
@@ -1679,10 +1679,11 @@ def ctrl_data(server, channel, user, ctrl_name, args='', data=''):
         if args == 'edit':
             token = rdata[server, chan]['duck_bomb'].split(',')
             for x in range(len(token)):
-                if pc.gettok(token[x], 0, ',') == user:
+                if pc.gettok(token[x], 0, '^') == user:
                     tok = token[x].split('^')
                     bombs = str(data)
                     newtok = tok[0] + '^' + bombs + '^' + tok[2]
+                    mprint(f'newtok: {newtok}')
                     reptok = rdata[server, chan]['duck_bomb'].replace(token[x], newtok)
                     rdata[server, chan]['duck_bomb'] = reptok
                     pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'duck_bomb', reptok)
@@ -4878,6 +4879,11 @@ def duck_bomb(server, channel, user, target):
         pc.privmsg_(server, channel.encode(), user + ' > You have not played yet.')
         return
 
+    # user isn't in the channel
+    if pc.is_on_chan(server, channel.encode(), target.encode()) is False:
+        pc.privmsg_(server, channel.encode(), target + ' is not in the channel.')
+        return
+
     # recently hit limit within last 24 hours
     if pc.istok_n(rdata[server, chan]['duck_bomb'], user, ',', '^', 0) is True and int(pc.gettok_n(rdata[server, chan]['duck_bomb'], user, ',', '^', 0, 1)) <= 0:
         timeleft = pc.gettok_n(rdata[server, chan]['duck_bomb'], user, ',', '^', 0, 2)
@@ -4904,9 +4910,12 @@ def duck_bomb(server, channel, user, target):
     #    return
 
     # target hasn't played
-    if pc.cnfexists(rdata[server, chan]['config_file'], dsect, target) is False:
+    if is_player(server, channel.encode(), target.encode()) is False:
+    # if pc.cnfexists(rdata[server, chan]['config_file'], dsect, target) is False:
         pc.privmsg_(server, channel.encode(), bytes(target + " has not played yet.", 'utf-8'))
         return
+
+    target = player_case(server, channel.encode(), target.encode())
 
     # can't bomb yourself
     if target.lower() == user.lower():
@@ -5359,22 +5368,22 @@ def tstat(server, channel, args=''):
 
     # !tstat or !tshot
     if args == 'total':
-        pc.privmsg_(server, channel, "\x033[Super DuckHunt] " + channel.decode() + " total statistics:\x034 Today:\x037 " + top_day[0] + " shot | " + top_day[1] + " fed\x034 This week:\x037 " + top_week[0] + " shot | " + top_week[1] + " fed\x034 This month:\x037 " + top_month[0] + " shot | " + top_month[1] + " fed\x034 Since last reset:\x037 " + top_total[0] + " shot | " + top_total[1] + " fed\x03")
+        pc.privmsg_(server, channel, "\x033[Super DuckHunt] " + channel.decode() + " Total Duck Statistics:\x037 [\x034Today:\x037 " + top_day[0] + " shot | " + top_day[1] + " fed] [\x034This week:\x037 " + top_week[0] + " shot | " + top_week[1] + " fed] [\x034This month:\x037 " + top_month[0] + " shot | " + top_month[1] + " fed] [\x034Since last reset:\x037 " + top_total[0] + " shot | " + top_total[1] + " fed]\x03")
         return
 
     # !daily
     if args == 'daily':
-        pc.privmsg_(server, channel, "\x033[Super DuckHunt] " + channel.decode() + " daily statistics:\x037 " + top_day[0] + " shot | " + top_day[1] + " fed\x03")
+        pc.privmsg_(server, channel, "\x033[Super DuckHunt] " + channel.decode() + " Daily Duck Statistics:\x037 " + top_day[0] + " shot | " + top_day[1] + " fed\x03")
         return
 
     # !weekly
     if args == 'weekly':
-        pc.privmsg_(server, channel, "\x033[Super DuckHunt] " + channel.decode() + " weekly statistics:\x037 " + top_week[0] + " shot | " + top_week[1] + " fed\x03")
+        pc.privmsg_(server, channel, "\x033[Super DuckHunt] " + channel.decode() + " Weekly Duck Statistics:\x037 " + top_week[0] + " shot | " + top_week[1] + " fed\x03")
         return
 
     # !monthly
     if args == 'monthly':
-        pc.privmsg_(server, channel, "\x033[Super DuckHunt] " + channel.decode() + " monthly statistics:\x037 " + top_month[0] + " shot | " + top_month[1] + " fed\x03")
+        pc.privmsg_(server, channel, "\x033[Super DuckHunt] " + channel.decode() + " Monthly duck statistics:\x037 " + top_month[0] + " shot | " + top_month[1] + " fed\x03")
         return
     return
 
