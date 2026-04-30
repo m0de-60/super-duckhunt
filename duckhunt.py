@@ -3996,7 +3996,7 @@ def bang(server, channel, user):
                         duckinfo(server, dchannel, duser, 'best', str(reacttime))
                         best = reacttime
                     if float(best) > reacttime:
-                        duckinfo(server, dchannel, duser, 'best', str(reacctime))
+                        duckinfo(server, dchannel, duser, 'best', str(reacttime))
                     # increase golden ducks
                     gducks = int(gducks) + 1
                     duckinfo(server, dchannel, duser, 'gducks', str(gducks))
