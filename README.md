@@ -11,9 +11,9 @@ BETA SCRIPT: This is the current ultra beta source code and progress on Super Du
 <H2>VERSION & DEVELOPMENT NOTES:</H2>
 
 4-30-2026 Officially upgrading status of this project to BETA TESTING. You can try out/test this new version at:
-irc.sorcery.net #Castle_Anthrax
-irc.rizon.net #testduck
-irc.freenode.net #DuckHunt
+irc.sorcery.net #Castle_Anthrax <br>
+irc.rizon.net #testduck <br>
+irc.freenode.net #DuckHunt <br>
 These are the places where I host my bots. Please feel free to come by and try them out. 
 <b>TO DO LIST: i18n support is coming soon! Along with some more new stuff, and tweaks as beta testing continues. Also working on documentation and some zCore stuff.</b>
 
