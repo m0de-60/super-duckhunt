@@ -10,6 +10,8 @@ BETA SCRIPT: This is the current ultra beta source code and progress on Super Du
 
 <H2>VERSION & DEVELOPMENT NOTES:</H2>
 
+5-1-2025 Made some adjustments to fatigue and illegal camping, including time limits. Requires zCore update.
+
 4-30-2026 <b>Officially upgrading status of this project to BETA TESTING. <br>
 <br>
 You can try out/test this new version at:</b> <br>
