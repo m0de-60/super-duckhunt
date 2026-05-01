@@ -2,13 +2,20 @@
 
 <h2>Super DuckHunt Interactive IRC game (zCcore Plugin Module)</h2>
 
-THIS IS NOT AN OFFICIAL RELEASE! IN DEVELOPMENT.
+THIS IS NOT AN OFFICIAL PUBLIC RELEASE! IN DEVELOPMENT/BETA TESTING.
 
 Multi-threaded and asyncronous, better and faster, ported from the standalone v1.1.4 with new features and code!
 
-INCOMPLETE SCRIPT: This is the current ultra beta source code and progress on Super DuckHunt v1.9.9 which is a zCore port of v1.1.4
+BETA SCRIPT: This is the current ultra beta source code and progress on Super DuckHunt v1.9.9 which is a zCore port of v1.1.4 with some new features and mechanics.
 
 <H2>VERSION & DEVELOPMENT NOTES:</H2>
+
+4-30-2026 Officially upgrading status of this project to BETA TESTING. You can try out/test this new version at:
+irc.sorcery.net #Castle_Anthrax
+irc.rizon.net #testduck
+irc.freenode.net #DuckHunt
+These are the places where I host my bots. Please feel free to come by and try them out. 
+<b>TO DO LIST: i18n support is coming soon! Along with some more new stuff, and tweaks as beta testing continues. Also working on documentation and some zCore stuff.</b>
 
 4-29-2026 Fixed a bug when player gets a faster reaction time, there was a typo on line 3999 ' reacctime ', corrected to ' reacttime '. Also changed the display text of the !tshot/!totals message.
 
