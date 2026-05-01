@@ -1722,11 +1722,11 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                 if ftg_p == '0':
                     continue
                 # if fatigue time is greater than 8 hours, remove all fatigue
-                if round(timem) > pc.hour8():
+                if round(timem) > pc.hour6():
                     duckinfo(server, dchannel, user, 'fatigue', '0^' + str(pc.cputime()))
                     continue
-                # if fatigue time is greater than 6 hours, deduct accordingly, 60 fatigue points
-                if round(timem) >= pc.hour6():
+                # if fatigue time is greater than 4 hours, deduct accordingly, 60 fatigue points
+                if round(timem) >= pc.hour4():
                     if int(ftg_p) <= 60:
                     # if 60 >= int(ftg_p) > 0:
                         duckinfo(server, dchannel, user, 'fatigue', '0^' + str(pc.cputime()))
@@ -3375,9 +3375,9 @@ def bang(server, channel, user):
     time_data(server, dchannel, duser, 'all-time')
 
     # player fatigued and must rest
-    if pc.istok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0) is True:
+    if pc.istok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0) is True and game_rules(server, dchannel, 'fatigue') == 'on':
         ptime = pc.gettok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0, 1)
-        ptime = pc.hour6() - pc.ceiling(pc.cputime() - float(ptime))
+        ptime = pc.hour2() - pc.ceiling(pc.cputime() - float(ptime))
         ptime = pc.hour24() - ptime
         timeval = pc.timeconvert(ptime)
         pc.privmsg_(server, channel, user.decode() + ' > \x034You are exhausted from fatigue! \x033[Time Remaining: ' + str(timeval) + ']\x03')
@@ -3542,8 +3542,9 @@ def bang(server, channel, user):
     duckinfo(server, dchannel, duser, 'guninfo', guninfo)
 
     # add 1 fatigue point per shot here
-    ftg_points = ftg_points + 1
-    duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
+    if game_rules(server, dchannel, 'fatigue') == 'on':
+        ftg_points = ftg_points + 1
+        duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
 
     # a duck exists
     if ducksdata(server, dchannel) > 0:
@@ -3572,11 +3573,24 @@ def bang(server, channel, user):
 
         # fatigue check here (miss if fatigue is too high)
         # if ftg_points >= 90 and ftg_points <= 100:
-        if 80 <= ftg_points < 100:
-            accuracy = accuracy - 50
-            hitormiss = pc.rand(1, 170)
-            # missed due to fatigue
-            if hitormiss > int(accuracy):
+        if game_rules(server, dchannel, 'fatigue') == 'on':
+            if 80 <= ftg_points < 100:
+                accuracy = accuracy - 50
+                hitormiss = pc.rand(1, 170)
+                # missed due to fatigue
+                if hitormiss > int(accuracy):
+                    # determine xp subtract
+                    rxp = pc.rand(3, 8)
+                    # deduct xp
+                    if int(xp) <= rxp:
+                        xp = 0
+                    if int(xp) > rxp:
+                        xp = int(xp) - rxp
+                    duckinfo(server, dchannel, duser, 'xp', str(xp))
+                    pc.privmsg_(server, channel, user.decode() + ' > \x0314*BANG*\x03     \x034MISSED due to fatigue   [-' + str(rxp) + ' xp]\x03')
+                    return
+            # player has collapsed from fatigue!
+            if ftg_points >= 100:
                 # determine xp subtract
                 rxp = pc.rand(3, 8)
                 # deduct xp
@@ -3585,25 +3599,13 @@ def bang(server, channel, user):
                 if int(xp) > rxp:
                     xp = int(xp) - rxp
                 duckinfo(server, dchannel, duser, 'xp', str(xp))
-                pc.privmsg_(server, channel, user.decode() + ' > \x0314*BANG*\x03     \x034MISSED due to fatigue   [-' + str(rxp) + ' xp]\x03')
+                if rdata[server, chan]['fatigue'] == '0':
+                    rdata[server, chan]['fatigue'] = duser + '^' + str(pc.cputime())
+                else:
+                    rdata[server, chan]['fatigue'] = rdata[server, chan]['fatigue'] + ',' + user + '^' + str(pc.cputime())
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'fatigue', rdata[server, chan]['fatigue'])
+                pc.privmsg_(server, channel, user.decode() + ' > \x034has collapsed from fatigue and must rest for 2 hours!   [-' + str(rxp) + ' xp]\x03')
                 return
-        # player has collapsed from fatigue!
-        if ftg_points >= 100:
-            # determine xp subtract
-            rxp = pc.rand(3, 8)
-            # deduct xp
-            if int(xp) <= rxp:
-                xp = 0
-            if int(xp) > rxp:
-                xp = int(xp) - rxp
-            duckinfo(server, dchannel, duser, 'xp', str(xp))
-            if rdata[server, chan]['fatigue'] == '0':
-                rdata[server, chan]['fatigue'] = duser + '^' + str(pc.cputime())
-            else:
-                rdata[server, chan]['fatigue'] = rdata[server, chan]['fatigue'] + ',' + user + '^' + str(pc.cputime())
-            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'fatigue', rdata[server, chan]['fatigue'])
-            pc.privmsg_(server, channel, user.decode() + ' > \x034has collapsed from fatigue and must rest for 6 hours!   [-' + str(rxp) + ' xp]\x03')
-            return
 
         # check if player is bedazzled
         if pc.istok_n(rdata[server, chan]['bedazzled'], duser, ',', '^', 0) is True:
@@ -3929,9 +3931,10 @@ def bang(server, channel, user):
                         pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
                         pc.privmsg_(server, channel, user.decode() + ' > Has been penalized for illegal camping! ' + user.decode() + ' cannot hunt for 2 hours. \x034[Illegal Camping]')
 
-                # add 5 fatigue points for normal duck
-                ftg_points = ftg_points + 5
-                duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
+                # add 1 fatigue points for normal duck
+                if game_rules(server, dchannel, 'fatigue') == 'on':
+                    ftg_points = ftg_points + 1
+                    duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
                 return
 
             # normal-gold ducks
@@ -4062,9 +4065,10 @@ def bang(server, channel, user):
                             pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
                             pc.privmsg_(server, channel, user.decode() + ' > Has been penalized for illegal camping! ' + user.decode() + ' cannot hunt for 2 hours. \x034[Illegal Camping]')
 
-                    # add 10 fatigue points for golden duck
-                    ftg_points = ftg_points + 10
-                    duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
+                    # add 2 fatigue points for golden duck
+                    if game_rules(server, dchannel, 'fatigue') == 'on':
+                        ftg_points = ftg_points + 2
+                        duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
                     return
 
     # missed - a duck does not exist
@@ -4224,6 +4228,15 @@ def reload(server, channel, user):
         pc.privmsg_(server, channel, user.decode() + ' > \x034You are not armed.\x03')
         return
 
+    # check if player is exhustted from fatigue
+    if pc.istok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0) is True:
+        ptime = pc.gettok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0, 1)
+        ptime = pc.hour2() - pc.ceiling(pc.cputime() - float(ptime))
+        ptime = pc.hour24() - ptime
+        timeval = pc.timeconvert(ptime)
+        pc.privmsg_(server, channel, user.decode() + ' > \x034You are exhausted from fatigue! \x033[Time Remaining: ' + str(timeval) + ']\x03')
+        return
+
     # Unjam gun
     if pc.istok(rdata[server, chan]['jammed'], duser, ',') is True:
         ctrl_data(server, dchannel, duser, 'jammed', 'rem')
@@ -4313,9 +4326,9 @@ def bef(server, channel, user):
     # time_data(server, dchannel, duser, 'all-time')
 
     # player is fatigued and must rest
-    if pc.istok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0) is True:
+    if pc.istok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0) is True and game_rules(server, dchannel, 'fatigue') == 'on':
         ptime = pc.gettok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0, 1)
-        ptime = pc.hour6() - pc.ceiling(pc.cputime() - float(ptime))
+        ptime = pc.hour2() - pc.ceiling(pc.cputime() - float(ptime))
         ptime = pc.hour24() - ptime
         timeval = pc.timeconvert(ptime)
         pc.privmsg_(server, channel, user.decode() + ' > \x034You are exhausted from fatigue! \x033[Time Remaining: ' + str(timeval) + ']\x03')
@@ -4378,8 +4391,9 @@ def bef(server, channel, user):
             user_data(server, dchannel, duser, 'popcorn', 'edit', str(popc))
 
     # add 1 fatigue point per toss here
-    ftg_points = ftg_points + 1
-    duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
+    if game_rules(server, dchannel, 'fatigue') == 'on':
+        ftg_points = ftg_points + 1
+        duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
 
     # no duck in the area
     if ducksdata(server, dchannel) == 0:
@@ -4414,9 +4428,28 @@ def bef(server, channel, user):
 
         # fatigue check here (miss if fatigue is too high)
         # if ftg_points >= 90 and ftg_points <= 100:
-        if 80 <= ftg_points < 100:
-            friendornot = pc.rand(1, 170)
-            if friendornot > int(rdata[server, chan]['friendrate']):
+        if game_rules(server, dchannel, 'fatigue') == 'on':
+            if 80 <= ftg_points < 100:
+                friendornot = pc.rand(1, 170)
+                if friendornot > int(rdata[server, chan]['friendrate']):
+                    rxp = pc.rand(1, 2)
+                    if int(xp) >= 10000 or int(level) >= 10:
+                        rxp = rxp + pc.rand(5, 6)
+                    elif int(xp) >= 5000 and int(xp) < 10000 and int(level) < 10:
+                        rxp = rxp + pc.rand(4, 5)
+                    elif int(xp) < 5000 and int(xp) >= 1500:
+                        rxp = rxp + pc.rand(2, 3)
+                    # deduct xp
+                    if int(xp) <= rxp:
+                        xp = 0
+                    if int(xp) > rxp:
+                        xp = int(xp) - rxp
+                    duckinfo(server, dchannel, duser, 'xp', str(xp))
+                    pc.privmsg_(server, channel, duser + " > \x034UNLUCKY\x03     \x034You tossed in the wrong direction due to fatigue!     [-" + str(rxp) + ' xp]\x03')
+                    return
+
+            # player has collapsed from fatigue!
+            if ftg_points >= 100:
                 rxp = pc.rand(1, 2)
                 if int(xp) >= 10000 or int(level) >= 10:
                     rxp = rxp + pc.rand(5, 6)
@@ -4430,31 +4463,13 @@ def bef(server, channel, user):
                 if int(xp) > rxp:
                     xp = int(xp) - rxp
                 duckinfo(server, dchannel, duser, 'xp', str(xp))
-                pc.privmsg_(server, channel, duser + " > \x034UNLUCKY\x03     \x034You tossed in the wrong direction due to fatigue!     [-" + str(rxp) + ' xp]\x03')
+                if rdata[server, chan]['fatigue'] == '0':
+                    rdata[server, chan]['fatigue'] = duser + '^' + str(pc.cputime())
+                else:
+                    rdata[server, chan]['fatigue'] = rdata[server, chan]['fatigue'] + ',' + user + '^' + str(pc.cputime())
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'fatigue', rdata[server, chan]['fatigue'])
+                pc.privmsg_(server, channel, user.decode() + ' > \x034has collapsed from fatigue and must rest for 2 hours!   [-' + str(rxp) + ' xp]\x03')
                 return
-
-        # player has collapsed from fatigue!
-        if ftg_points >= 100:
-            rxp = pc.rand(1, 2)
-            if int(xp) >= 10000 or int(level) >= 10:
-                rxp = rxp + pc.rand(5, 6)
-            elif int(xp) >= 5000 and int(xp) < 10000 and int(level) < 10:
-                rxp = rxp + pc.rand(4, 5)
-            elif int(xp) < 5000 and int(xp) >= 1500:
-                rxp = rxp + pc.rand(2, 3)
-            # deduct xp
-            if int(xp) <= rxp:
-                xp = 0
-            if int(xp) > rxp:
-                xp = int(xp) - rxp
-            duckinfo(server, dchannel, duser, 'xp', str(xp))
-            if rdata[server, chan]['fatigue'] == '0':
-                rdata[server, chan]['fatigue'] = duser + '^' + str(pc.cputime())
-            else:
-                rdata[server, chan]['fatigue'] = rdata[server, chan]['fatigue'] + ',' + user + '^' + str(pc.cputime())
-            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'fatigue', rdata[server, chan]['fatigue'])
-            pc.privmsg_(server, channel, user.decode() + ' > \x034has collapsed from fatigue and must rest for 6 hours!   [-' + str(rxp) + ' xp]\x03')
-            return
 
         # player is bedazzled
         if pc.istok_n(rdata[server, chan]['bedazzled'], duser, ',', '^', 0) is True:
@@ -4652,9 +4667,10 @@ def bef(server, channel, user):
                         pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
                         pc.privmsg_(server, channel, user.decode() + ' > Has been penalized for illegal camping! ' + user.decode() + ' cannot hunt for 2 hours. \x034[Illegal Camping]')
 
-                # add 5 fatigue points for normal duck
-                ftg_points = ftg_points + 5
-                duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
+                # add 1 fatigue points for normal duck
+                if game_rules(server, dchannel, 'fatigue') == 'on':
+                    ftg_points = ftg_points + 1
+                    duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
                 return
 
             # normal-gold duck
@@ -4785,9 +4801,10 @@ def bef(server, channel, user):
                             pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
                             pc.privmsg_(server, channel, user.decode() + ' > Has been penalized for illegal camping! ' + user.decode() + ' cannot hunt for 2 hours. \x034[Illegal Camping]')
 
-                    # add 10 fatigue points for golden duck
-                    ftg_points = ftg_points + 10
-                    duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
+                    # add 2 fatigue points for golden duck
+                    if game_rules(server, dchannel, 'fatigue') == 'on':
+                        ftg_points = ftg_points + 2
+                        duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
                     return
 
 # !bread or !reloaf ----------------------------------------------------------------------------------------------------
@@ -4811,6 +4828,15 @@ def reloaf(server, channel, user):
         ptime = pc.hour24() - ptime
         timeval = pc.timeconvert(ptime)
         pc.privmsg_(server, channel, user.decode() + ' > \x034You currently have an illegal camping penalty. \x033[Time Remaining: ' + str(timeval) + ']\x03')
+        return
+
+    # player is exhuasted from fatigue
+    if pc.istok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0) is True and game_rules(server, dchannel, 'fatigue') == 'on':
+        ptime = pc.gettok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0, 1)
+        ptime = pc.hour2() - pc.ceiling(pc.cputime() - float(ptime))
+        ptime = pc.hour24() - ptime
+        timeval = pc.timeconvert(ptime)
+        pc.privmsg_(server, channel, user.decode() + ' > \x034You are exhausted from fatigue! \x033[Time Remaining: ' + str(timeval) + ']\x03')
         return
 
     # bread doesn't need to be reloaded (new player)
