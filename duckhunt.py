@@ -4290,7 +4290,7 @@ def bef(server, channel, user):
         dinfo = '7?3?7?3,0,0,0,1,200,0^' + str(pc.cputime()) + ',0,75?80?80,0,0,12?12?3?3,0'
         pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', duser, str(dinfo))
         if pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', 'cache') == '0':
-            pc.cnfwrite(rdata[server, chan]['config_file'], dsect, 'cache', '1')  # ???
+            pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', 'cache', '1')  # ???
 
     # check all timed items/effects
     time_data(server, dchannel, duser, 'all-time')
