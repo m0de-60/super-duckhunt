@@ -5583,7 +5583,7 @@ def config_build(server, channel):
     pc.cnfwrite(filename, chansect, 'duckgold', '40')
     pc.cnfwrite(filename, chansect, 'friendrate', '71')
     pc.cnfwrite(filename, chansect, 'relays', '0')  # Needed for later improvements
-    pc.cnfwrite(filename, chansect, 'rules', '15,20,on,off,on,on,6^1')
+    pc.cnfwrite(filename, chansect, 'rules', '15,20,on,off,on,on,6^1,on')
     pc.cnfwrite(filename, chansect, 'bedazzled', '0')
     pc.cnfwrite(filename, chansect, 'soggy', '0')
     pc.cnfwrite(filename, chansect, 'sabotage', '0')
