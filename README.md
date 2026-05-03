@@ -10,7 +10,9 @@ BETA SCRIPT: This is the current ultra beta source code and progress on Super Du
 
 <H2>VERSION & DEVELOPMENT NOTES:</H2>
 
-5-1-2025 Made some adjustments to fatigue and illegal camping, including time limits. Requires zCore update.
+5-2-2026 Added some new information to !duckstats, added 'Camp Count' which will show a user how close they are to an illegal camping penalty, and will indicate if the player has a permit or if free camping is enabled. Also made more adjustments to the camp count in the code, and fixed a bug that was resetting the camp count timer every time a user shot a duck, normally camp count timer starts with first shot, and runs for 2 hours (or specified rule time) then resets. 
+
+5-1-2026 Made some adjustments to fatigue and illegal camping, including time limits. Requires zCore update.
 
 4-30-2026 <b>Officially upgrading status of this project to BETA TESTING. <br>
 <br>
