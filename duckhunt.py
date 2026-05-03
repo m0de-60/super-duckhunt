@@ -1230,48 +1230,68 @@ def ducktimer(server, channel):
             break
 
         # Check total shot timers and hour/day/week/month for changes etc
-        # New hour
+        # New hour - hourly resets
         if str(pc.chour()) != rdata[server, chan]['hour']:
             mprint(f"It's a new hour!")
             rdata[server, chan]['hour'] = str(pc.chour())
             pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'hour', str(pc.chour()))
             # reset hourly stats
 
-        # New day
+            # hourly camp count reduction ------------------------------------------------------------------------------
+            # every hour that passes, all players that have a camp count, the number of ducks is reduced by 2.
+            if rdata[server, chan]['camp_count'] != '0':
+                cctok = rdata[server, chan]['camp_count'].split(',')
+                newcc = '0'
+                for x in range(len(cctok)):
+                    usern = pc.gettok(cctok[x], 0, '^')  # username
+                    usert = pc.gettok(cctok[x], 1, '^')  # camp count timer
+                    userc = pc.gettok(cctok[x], 2, '^')  # camp count value
+                    if int(userc) > 2:
+                        userc = int(userc) - 2
+                        repcc = usern + '^' + str(usert) + '^' + str(userc)
+                        if newcc != '0':
+                            newcc = newcc + ',' + repcc
+                        if newcc == '0':
+                            newcc = repcc
+                    continue
+                rdata[server, chan]['camp_count'] = newcc
+                pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'camp_count', newcc)
+
+        # New day - daily resets
         if str(pc.cday()) != rdata[server, chan]['day']:
             mprint(f"It's a new day!")
             rdata[server, chan]['day'] = str(pc.cday())
             pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'day', str(pc.cday()))
-            # reset daily stats
+            # reset daily total stats
             t_day = rdata[server, chan]['top_stat']['daily'].split('^')
             pc.privmsg_(server, channel.encode(), "It's a new day! Stats yesterday: [Ducks Shot: " + str(t_day[0]) + "][Ducks Befriended: " + str(t_day[1]) + "] Daily stats have been reset for a new day!")
             t_stat(server, channel, 'reset', 'day')
 
-        # New week
+        # New week - weekly resets
         if str(pc.cweek()) != rdata[server, chan]['week']:
             mprint(f"It's a new week!")
             rdata[server, chan]['week'] = str(pc.cweek())
             pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'week', str(pc.cweek()))
-            # reset weekly stats
+            # reset weekly total stats
             t_week = rdata[server, chan]['top_stat']['weekly'].split('^')
             pc.privmsg_(server, channel.encode(), "It's a new week! Stats last week: [Ducks Shot: " + str(t_week[0]) + "][Ducks Befriended: " + str(t_week[1]) + "] Weekly stats have been reset for a new day!")
             t_stat(server, channel, 'reset', 'week')
 
-        # New Month
+        # New Month - monthly resets
         if str(pc.cmonth()) != rdata[server, chan]['month']:
             mprint(f"It's a new month!")
             rdata[server, chan]['month'] = str(pc.cmonth())
             pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'month', str(pc.cmonth()))
-            # reset monthly stats
+            # reset monthly total stats
             t_month = rdata[server, chan]['top_stat']['monthly'].split('^')
             pc.privmsg_(server, channel.encode(), "It's a new month! Stats last month: [Ducks Shot: " + str(t_month[0]) + "][Ducks Befriended: " + str(t_month[1]) + "] Monthly stats have been reset for a new month!")
             t_stat(server, channel, 'reset', 'month')
 
+        # New Year = yearly resets
         if str(pc.cyear()) != rdata[server, chan]['year']:
             mprint(f"It's a new year!")
             rdata[server, chan]['year'] = str(pc.cyear())
             pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'year', str(pc.cyear()))
-            # reset yearly stats
 
         # check flood timers here
         if rdata[server, chan]['flood_check'] == 'on':
@@ -1544,7 +1564,8 @@ def ctrl_data(server, channel, user, ctrl_name, args='', data=''):
                 if pc.gettok(token[x], 0, '^') == duser:
                     tok = token[x].split('^')
                     counts = str(data)
-                    ntime = str(pc.cputime())
+                    # ntime = str(pc.cputime())
+                    ntime = pc.gettok(token[x], 1, '^')
                     newtok = tok[0] + '^' + ntime + '^' + counts
                     reptok = rdata[server, chan]['camp_count'].replace(token[x], newtok)
                     rdata[server, chan]['camp_count'] = reptok
@@ -1789,14 +1810,12 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                                 # pc.privmsg(server, channel, pc.gettok(tok[x], 0, '^') + ' > Hunting penalty for illegal camping has been lifted! \x034Make sure to buy a Camping Permit next time!\x03 \x033[Camp Grounds]\x03')
                                 break
                         # Camping counter reset
+                        # Camp counters are reset whenever the player's stored time has met the set rules time
                         # username^time^count
                         if listitem[z] == 'camp_count':
-                            # utime = pc.gettok(tok[x], 1, '^')
-                            # timem = pc.cputime() - float(utime)
                             camping = pc.gettok(rdata[server, chan]['rules'], 6, ',')
                             camptimer = int(pc.gettok(camping, 1, '^')) * 3600
                             if round(timem) >= camptimer:
-                            # if round(timem) >= pc.hour2():
                                 if pc.numtok(rdata[server, chan][listitem[z]], ',') < 2:
                                     newtok = '0'
                                 else:
@@ -2368,6 +2387,16 @@ def duckstats(server, channel, user, ruser, ext=''):
         fatigue = '\x034,1 ' + str(fatigue) + '%'
     fatigue = fatigue.encode()
 
+    camping = 'Camp Count: FREE'
+    if game_rules(server, dchannel, 'camping') == 'on':
+        campc = '0'
+        camprule = pc.gettok(rdata[server, chan]['rules'], 6, ',')
+        tcamp = pc.gettok(camprule, 0, '^')
+        if pc.istok_n(rdata[server, chan]['camp_count'], druser, ',', '^', 0) is True:
+            campc = pc.gettok_n(rdata[server, chan]['camp_count'], druser, ',', '^', 0, 2)
+        camping = 'Camp Count:\x034,1 ' + campc + '/' + tcamp
+    camping = camping.encode()
+
     if besttime == b'0':
         besttime = b'NA'
 
@@ -2388,13 +2417,13 @@ def duckstats(server, channel, user, ruser, ext=''):
     friend = duckinfo(server, dchannel, druser, 'friend').encode()
 
     if game_rules(server, dchannel, 'infammo') == 'on':
-        scorebox = b'\x037,1 Best Time:\x034,1 ' + besttime + b' \x030,1|\x037,1 Level:\x034,1 ' + level + b' \x030,1|\x037,1 xp:\x034,1 ' + xp + b' \x030,1|\x037,1 Fatigue:' + fatigue + b' \x030,1|\x037,1 Ducks:\x034,1 ' + tducks + b' \x030,1|\x037,1 Golden Ducks:\x034,1 ' + gducks + b' \x030,1|\x037,1 Befriended Ducks:\x034,1 ' + friend + b' \x030,1|\x037,1 Accidents:\x034,1 ' + accidents
-        breadbox = b'\x038,1[BREAD BOX]\x037,1 Bread Pieces:\x034,1 ' + bread + b'/' + mbread + b' \x030,1|\x037,1 Loaf: \x02\x033Inf\x02'
-        gunbox = b'\x038,1[GUN STATS]\x037,1 Status:\x034,1 ' + gunstatus + b' \x030,1|\x037,1 Rounds:\x034,1 ' + rounds + b'/' + mrounds + b' \x030,1|\x037,1 Magazines: \x02\x033Inf\x02\x03 \x030,1|\x037,1 Accuracy:\x034,1 ' + accuracy + b'% \x030,1|\x037,1 Current Reliability:\x034,1 ' + reliability + b'% \x030,1|\x037,1 Max Reliability:\x034,1 ' + mreliability + b'%'
+        scorebox = b'\x037,1 Best Time:\x034,1 ' + besttime + b' \x030,1|\x037,1 Level:\x034,1 ' + level + b' \x030,1|\x037,1 xp:\x034,1 ' + xp + b' \x030,1|\x037,1 Fatigue:' + fatigue + b' \x030,1|\x037,1 Ducks:\x034,1 ' + tducks + b' \x030,1|\x037,1 Golden Ducks:\x034,1 ' + gducks + b' \x030,1|\x037,1 Befriended Ducks:\x034,1 ' + friend + b' \x030,1|\x037,1 Accidents:\x034,1 ' + accidents + b' \x030,1|\x037,1 ' + camping + b'\x03'
+        breadbox = b'\x038,1[BREAD BOX]\x037,1 Bread Pieces:\x034,1 ' + bread + b'/' + mbread + b' \x030,1|\x037,1 Loaf: \x02\x033Inf\x02\x03'
+        gunbox = b'\x038,1[GUN STATS]\x037,1 Status:\x034,1 ' + gunstatus + b' \x030,1|\x037,1 Rounds:\x034,1 ' + rounds + b'/' + mrounds + b' \x030,1|\x037,1 Magazines: \x02\x033Inf\x02\x03 \x030,1|\x037,1 Accuracy:\x034,1 ' + accuracy + b'% \x030,1|\x037,1 Current Reliability:\x034,1 ' + reliability + b'% \x030,1|\x037,1 Max Reliability:\x034,1 ' + mreliability + b'%\x03'
     if game_rules(server, dchannel, 'infammo') == 'off':
-        scorebox = b'\x037,1 Best Time:\x034,1 ' + besttime + b' \x030,1|\x037,1 Level:\x034,1 ' + level + b' \x030,1|\x037,1 xp:\x034,1 ' + xp + b' \x030,1|\x037,1 Fatigue:' + fatigue + b' \x030,1|\x037,1 Ducks:\x034,1 ' + tducks + b' \x030,1|\x037,1 Golden Ducks:\x034,1 ' + gducks + b' \x030,1|\x037,1 Befriended Ducks:\x034,1 ' + friend + b' \x030,1|\x037,1 Accidents:\x034,1 ' + accidents
+        scorebox = b'\x037,1 Best Time:\x034,1 ' + besttime + b' \x030,1|\x037,1 Level:\x034,1 ' + level + b' \x030,1|\x037,1 xp:\x034,1 ' + xp + b' \x030,1|\x037,1 Fatigue:' + fatigue + b' \x030,1|\x037,1 Ducks:\x034,1 ' + tducks + b' \x030,1|\x037,1 Golden Ducks:\x034,1 ' + gducks + b' \x030,1|\x037,1 Befriended Ducks:\x034,1 ' + friend + b' \x030,1|\x037,1 Accidents:\x034,1 ' + accidents + b' \x030,1|\x037,1 ' + camping + b'\x03'
         breadbox = b'\x038,1[BREAD BOX]\x037,1 Bread Pieces:\x034,1 ' + bread + b'/' + mbread + b' \x030,1|\x037,1 Loaf:\x034,1 ' + loaf + b'/' + mloaf
-        gunbox = b'\x038,1[GUN STATS]\x037,1 Status:\x034,1 ' + gunstatus + b' \x030,1|\x037,1 Rounds:\x034,1 ' + rounds + b'/' + mrounds + b' \x030,1|\x037,1 Magazines:\x034,1 ' + mags + b'/' + mmags + b' \x030,1|\x037,1 Accuracy:\x034,1 ' + accuracy + b'% \x030,1|\x037,1 Current Reliability:\x034,1 ' + reliability + b'% \x030,1|\x037,1 Max Reliability:\x034,1 ' + mreliability + b'%'
+        gunbox = b'\x038,1[GUN STATS]\x037,1 Status:\x034,1 ' + gunstatus + b' \x030,1|\x037,1 Rounds:\x034,1 ' + rounds + b'/' + mrounds + b' \x030,1|\x037,1 Magazines:\x034,1 ' + mags + b'/' + mmags + b' \x030,1|\x037,1 Accuracy:\x034,1 ' + accuracy + b'% \x030,1|\x037,1 Current Reliability:\x034,1 ' + reliability + b'% \x030,1|\x037,1 Max Reliability:\x034,1 ' + mreliability + b'%\x03'
     # left off here need to finish porting inveffect
     hbe = inveffect(server, dchannel, ruser)
     huntingbag = pc.gettok(hbe, 0, '::')
