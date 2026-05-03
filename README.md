@@ -16,9 +16,8 @@ BETA SCRIPT: This is the current ultra beta source code and progress on Super Du
 
 4-30-2026 
 ```diff 
-- Officially upgrading status of this project to BETA TESTING.
+-@ Officially upgrading status of this project to BETA TESTING.
 ```
-<br>
 <br>
 You can try out/test this new version at:</b> <br>
 irc.sorcery.net #Castle_Anthrax (port 6667, SSL +6697) <br>
