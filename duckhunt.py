@@ -2389,12 +2389,15 @@ def duckstats(server, channel, user, ruser, ext=''):
 
     camping = 'Camp Count: FREE'
     if game_rules(server, dchannel, 'camping') == 'on':
-        campc = '0'
-        camprule = pc.gettok(rdata[server, chan]['rules'], 6, ',')
-        tcamp = pc.gettok(camprule, 0, '^')
-        if pc.istok_n(rdata[server, chan]['camp_count'], druser, ',', '^', 0) is True:
-            campc = pc.gettok_n(rdata[server, chan]['camp_count'], druser, ',', '^', 0, 2)
-        camping = 'Camp Count:\x034,1 ' + campc + '/' + tcamp
+        if pc.istok_n(rdata[server, chan]['camping_permit'], druser, ',', '^', 0) is True:
+            camping = 'Camp Count: HAS PERMIT'
+        elif pc.istok_n(rdata[server, chan]['camping_permit'], druser, ',', '^', 0) is False:
+            campc = '0'
+            camprule = pc.gettok(rdata[server, chan]['rules'], 6, ',')
+            tcamp = pc.gettok(camprule, 0, '^')
+            if pc.istok_n(rdata[server, chan]['camp_count'], druser, ',', '^', 0) is True:
+                campc = pc.gettok_n(rdata[server, chan]['camp_count'], druser, ',', '^', 0, 2)
+            camping = 'Camp Count:\x034,1 ' + campc + '/' + tcamp
     camping = camping.encode()
 
     if besttime == b'0':
@@ -3295,6 +3298,7 @@ def shop(server, channel, user, itemid, target=''):
         if pc.istok_n(rdata[server, chan]['illegal_camping'], duser, ',', '^', 0) is True:
             time_data(server, channel, duser, 'illegal_camping', 'rem')
         # add camping permit
+        ctrl_data(server, dchannel, duser, 'camp_count', 'rem')
         time_data(server, channel, duser, 'camping_permit', 'add')
         pc.notice_(server, user, 'You purchased Camping Permit. This will allow you to camp out for 8 hours.')
         return
