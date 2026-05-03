@@ -17,12 +17,12 @@ BETA SCRIPT: This is the current ultra beta source code and progress on Super Du
 4-30-2026 
 ```diff 
 - Officially upgrading status of this project to BETA TESTING.
-```
-<br>
+
 You can try out/test this new version at:</b> <br>
 irc.sorcery.net #Castle_Anthrax (port 6667, SSL +6697) <br>
 irc.rizon.net #testduck (port 6667, SSL +6697) <br>
 irc.freenode.net #DuckHunt (port 6667, SSL +6697) <br>
+```
 <br>
 These are the places where I host my bots. Please feel free to come by and try them out. <br>
 <b>TO DO LIST: i18n support is coming soon! Along with some more new stuff, and tweaks as beta testing continues. Also working on documentation and some zCore stuff.</b>
