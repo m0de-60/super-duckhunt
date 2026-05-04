@@ -12,10 +12,8 @@ BETA SCRIPT: This is the current ultra beta source code and progress on Super Du
 
 5-3-2025 Further, and should be final, adjustments to illegal camping system. Also changed the befriending/feeding messages when using !bef to show reaction time in the success message as well as tweaked the structure
 of the text to look more similar to when shooting a duck.
-
-BEFORE: <DuckHunt> Neo_Nemesis > FRIEND     The duck ate the piece of popcorn!     \_O< QUAACK!   [BEFRIENDED DUCKS: 2395] [+15 xp]
-
-NEW---: <DuckHunt> Neo_Nemesis > FRIEND     The duck ate the piece of bread in 1.51 seconds!     \_O<   QUAACK!   [+15 xp] [BEFRIENDED DUCKS: 2408]
+BEFORE: [DuckHunt] Neo_Nemesis > FRIEND     The duck ate the piece of popcorn!     \_O< QUAACK!   [BEFRIENDED DUCKS: 2395] [+15 xp]
+NEW---: [DuckHunt] Neo_Nemesis > FRIEND     The duck ate the piece of bread in 1.51 seconds!     \_O<   QUAACK!   [+15 xp] [BEFRIENDED DUCKS: 2408]
 
 5-2-2026 Added some new information to !duckstats, added 'Camp Count' which will show a user how close they are to an illegal camping penalty, and will indicate if the player has a permit or if free camping is enabled. Also made more adjustments to the camp count in the code, and fixed a bug that was resetting the camp count timer every time a user shot a duck, normally camp count timer starts with first shot, and runs for 2 hours (or specified rule time) then resets. 
 
