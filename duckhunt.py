@@ -1239,6 +1239,7 @@ def ducktimer(server, channel):
 
             # hourly camp count reduction ------------------------------------------------------------------------------
             # every hour that passes, all players that have a camp count, the number of ducks is reduced by 2.
+            # only works for users with xp less than or equal to 1500 xp.
             if rdata[server, chan]['camp_count'] != '0':
                 cctok = rdata[server, chan]['camp_count'].split(',')
                 newcc = '0'
@@ -1246,14 +1247,21 @@ def ducktimer(server, channel):
                     usern = pc.gettok(cctok[x], 0, '^')  # username
                     usert = pc.gettok(cctok[x], 1, '^')  # camp count timer
                     userc = pc.gettok(cctok[x], 2, '^')  # camp count value
-                    if int(userc) > 2:
+                    xp = duckinfo(server, channel, usern, 'xp')
+                    if int(xp) <= 1500 and int(userc) > 2:
                         userc = int(userc) - 2
                         repcc = usern + '^' + str(usert) + '^' + str(userc)
                         if newcc != '0':
                             newcc = newcc + ',' + repcc
                         if newcc == '0':
                             newcc = repcc
-                    continue
+                        continue
+                    else:
+                        if newcc != '0':
+                            newcc = newcc + ',' + cctok[x]
+                        if newcc == '0':
+                            newcc = cctok[x]
+                        continue
                 rdata[server, chan]['camp_count'] = newcc
                 pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'camp_count', newcc)
 
@@ -4573,7 +4581,7 @@ def bef(server, channel, user):
             # normal duck
             # mprint(f'normal duck unlucky missed bread ----------------------------')
             if pc.gettok(duckdata, 1, ',') == 'normal':
-                pc.privmsg_(server, channel, user.decode() + " > \x034UNLUCKY\x03     The duck didn't seem to notice. Try again.     \x02\\_O< QUACK\x02    \x034[-" + str(rxp) + ' xp]\x03')
+                pc.privmsg_(server, channel, user.decode() + " > \x034UNLUCKY\x03     The duck didn't seem to notice. Try again.     \x02\\_O<   QUACK\x02    \x034[-" + str(rxp) + ' xp]\x03')
                 return
 
             # normal-gold
@@ -4588,7 +4596,7 @@ def bef(server, channel, user):
                 if pc.numtok(duckdata, ',') == 4:
                     duckdata = duckdata + ',1'
                     rdata[server, chan]['duck'][int(duckid)] = duckdata
-                    pc.privmsg_(server, channel, user.decode() + " > \x034UNLUCKY\x03     The duck didn't seem to notice. Try again.     \x02\\_O< QUACK\x02    \x034[-" + str(rxp) + ' xp]\x03')
+                    pc.privmsg_(server, channel, user.decode() + " > \x034UNLUCKY\x03     The duck didn't seem to notice. Try again.     \x02\\_O<   QUACK\x02    \x034[-" + str(rxp) + ' xp]\x03')
                     return
 
                 # 2nd miss determine if duck will turn golden
@@ -4597,7 +4605,7 @@ def bef(server, channel, user):
                         duckstat = pc.rand(4, 7)
                         duckdata = pc.gettok(duckdata, 0, ',') + ',golden,' + str(duckstat) + ',' + pc.gettok(duckdata, 3, ',')
                         rdata[server, chan]['duck'][int(duckid)] = duckdata
-                        pc.privmsg_(server, channel, user.decode() + " > \x034UNLUCKY\x03     The duck didn't seem to notice. Try again.\x037    \x02\\_O<    * GOLDEN DUCK DETECTED *\x02\x03")
+                        pc.privmsg_(server, channel, user.decode() + " > \x034UNLUCKY\x03     The duck didn't seem to notice. Try again.\x037     \x02\\_O<   * GOLDEN DUCK DETECTED *\x02\x03")
                         return
             # golden
             # mprint(f'golden duck unlucky missed bread ----------------------------')
@@ -4607,7 +4615,7 @@ def bef(server, channel, user):
                 varxp = int(rdata[server, chan]['golduckxp'][int(duckid)]) + 1
                 rdata[server, chan]['golduckxp'][int(duckid)] = int(varxp)
 
-                pc.privmsg_(server, channel, user.decode() + " > \x034UNLUCKY\x03     The GOLDEN DUCK didn't seem to notice. Try again.     \x02\\_O< QUACK\x02    \x034[-" + str(rxp) + ' xp]\x03')
+                pc.privmsg_(server, channel, user.decode() + " > \x034UNLUCKY\x03     The GOLDEN DUCK didn't seem to notice. Try again.     \x02\\_O<   QUACK\x02    \x034[-" + str(rxp) + ' xp]\x03')
                 return
 
         # friend
@@ -4639,7 +4647,7 @@ def bef(server, channel, user):
                     wooid = 'bread'
                     if pc.istok_n(rdata[server, chan]['popcorn'], duser, ',', '^', 0) is True:
                         wooid = 'popcorn'
-                    pc.privmsg_(server, channel, user.decode() + ' > \x0314FRIEND\x03     The duck ate the piece of ' + str(wooid) + '!     \x02\\_O< QUAACK!\x02\x033   [BEFRIENDED DUCKS: ' + str(friend) + '] [+' + str(exp) + ' xp]\x03')
+                    pc.privmsg_(server, channel, user.decode() + ' > \x0314FRIEND\x03     The duck ate the piece of ' + str(wooid) + ' in ' + str(reacttime) + ' seconds!     \x02\\_O<   QUAACK!\x02\x033   [+' + str(exp) + ' xp] [BEFRIENDED DUCKS: ' + str(friend) + ']\x03')
 
                 # increase xp - has lucky charm
                 if pc.istok_n(rdata[server, chan]['lucky_charm'], duser, ',', '^', 0) is True:
@@ -4650,7 +4658,7 @@ def bef(server, channel, user):
                     wooid = 'bread'
                     if pc.istok_n(rdata[server, chan]['popcorn'], duser, ',', '^', 0) is True:
                         wooid = 'popcorn'
-                    pc.privmsg_(server, channel, user.decode() + ' > \x0314FRIEND\x03     The duck ate the piece of ' + str(wooid) + '!     \x02\\_O< QUAACK!\x02\x033   [BEFRIENDED DUCKS: ' + str(friend) + '] [+' + str(exp) + ' xp - Lucky Charm]\x03')
+                    pc.privmsg_(server, channel, user.decode() + ' > \x0314FRIEND\x03     The duck ate the piece of ' + str(wooid) + ' in ' + str(reacttime) + ' seconds!     \x02\\_O<   QUAACK!\x02\x033   [+' + str(exp) + ' xp - Lucky Charm] [BEFRIENDED DUCKS: ' + str(friend) + ']\x03')
 
                 # reset duck info
                 rdata[server, chan]['duck'][int(duckid)] = '0'
@@ -4777,14 +4785,14 @@ def bef(server, channel, user):
                         exp = int(exp) + int(lcxp)
                         xp = int(xp) + int(exp)
                         duckinfo(server, dchannel, duser, 'xp', str(xp))
-                        pc.privmsg_(server, channel, user.decode() + ' > \x0314FRIEND\x03     The GOLDEN DUCK ate the piece of ' + str(woid) + '!     \x02\\_0< QUAACK!\x02\x033   [BEFRIENDED DUCKS: ' + str(friend) + '] [+' + str(exp) + ' xp - Lucky Charm]\x03')
+                        pc.privmsg_(server, channel, user.decode() + ' > \x0314FRIEND\x03     The GOLDEN DUCK ate the piece of ' + str(woid) + ' in ' + str(reacttime) + ' seconds!     \x02\\_0<   QUAACK!\x02\x033   [+' + str(exp) + ' xp - Lucky Charm] [BEFRIENDED DUCKS: ' + str(friend) + ']\x03')
 
                     # increase xp - does not have lucky charm
                     if pc.istok_n(rdata[server, chan]['lucky_charm'], duser, ',', '^', 0) is False:
                         exp = int(rdata[server, chan]['duckexp']) * rdata[server, chan]['golduckxp'][int(duckid)]
                         xp = int(xp) + int(exp)
                         duckinfo(server, dchannel, duser, 'xp', str(xp))
-                        pc.privmsg_(server, channel, user.decode() + ' > \x0314FRIEND\x03     The GOLDEN DUCK ate the piece of ' + str(woid) + '!     \x02\\_0< QUAACK!\x02\x033   [BEFRIENDED DUCKS: ' + str(friend) + '] [+' + str(exp) + ' xp]\x03')
+                        pc.privmsg_(server, channel, user.decode() + ' > \x0314FRIEND\x03     The GOLDEN DUCK ate the piece of ' + str(woid) + ' in ' + str(reacttime) + ' seconds!     \x02\\_0<   QUAACK!\x02\x033   [+' + str(exp) + ' xp] [BEFRIENDED DUCKS: ' + str(friend) + ']\x03')
 
                     # reset duck info
                     rdata[server, chan]['duck'][int(duckid)] = '0'
