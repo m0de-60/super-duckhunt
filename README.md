@@ -2,11 +2,14 @@
 
 <h2>Super DuckHunt Interactive IRC game (zCcore Plugin Module)</h2>
 
-THIS IS NOT AN OFFICIAL PUBLIC RELEASE! IN DEVELOPMENT/BETA TESTING.
+<b>BETA TESTING / IN DEVELOPMENT.</b>
+THIS IS NOT AN OFFICIAL PUBLIC RELEASE!
+
+OPERATOR'S GUIDE (INSTALLATION & CONFIGURATION) [COMING SOON] | <a href="https://m0de-60.github.io/super-duckhunt-web/super-duckhunt-help.htm">HELP PAGE (COMMANDS AND INFO)</a>
 
 Multi-threaded and asyncronous, better and faster, ported from the standalone v1.1.4 with new features and code!
 
-BETA SCRIPT: This is the current ultra beta source code and progress on Super DuckHunt v1.9.9 which is a zCore port of v1.1.4 with some new features and mechanics.
+<b>BETA SCRIPT: This is the current ultra beta source code and progress on Super DuckHunt v1.9.9 which is a zCore port of v1.1.4 with some new features and mechanics.</b>
 
 <H2>VERSION & DEVELOPMENT NOTES:</H2>
 
