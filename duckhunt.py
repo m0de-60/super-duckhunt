@@ -5230,7 +5230,7 @@ def level_up(server, channel, user):
     # prize 2 rain coat
     if drawprize == 2:
         prize = 'Rain Coat'
-        prizedesc = 'This will prevent getting and soggy and sheild against a duck bomb for 24 hours.'
+        prizedesc = 'This will prevent getting and soggy and shield against a duck bomb for 24 hours.'
         time_data(server, channel, user, 'rain_coat', 'add')
 
     # prize 3 sun glasses
