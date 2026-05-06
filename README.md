@@ -5,7 +5,8 @@
 <b>BETA TESTING / IN DEVELOPMENT.</b>
 THIS IS NOT AN OFFICIAL PUBLIC RELEASE!
 
-OPERATOR'S GUIDE (INSTALLATION & CONFIGURATION) [COMING SOON] | <a href="https://m0de-60.github.io/super-duckhunt-web/super-duckhunt-help.htm">HELP PAGE (COMMANDS AND INFO)</a>
+Click here for OPERATOR'S GUIDE (INSTALLATION & CONFIGURATION) [COMING SOON]
+Click here for <a href="https://m0de-60.github.io/super-duckhunt-web/super-duckhunt-help.htm">HELP PAGE (COMMANDS AND INFO)</a>
 
 Multi-threaded and asyncronous, better and faster, ported from the standalone v1.1.4 with new features and code!
 
