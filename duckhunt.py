@@ -301,14 +301,14 @@ async def evt_privmsg(server, message):
                 # rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
                 f_time = pc.cputime() - float(rdata[server, chan]['flood_time'])
                 # threshold not reached, reset time and count
-                if round(f_time) > 10 and int(rdata[server, chan]['flood']) < 8:
+                if round(f_time) > 20 and int(rdata[server, chan]['flood']) < 16:
                     rdata[server, chan]['flood_time'] = pc.cputime()
                     rdata[server, chan]['flood'] = 0
                 # command threshold reached, check time
-                if int(rdata[server, chan]['flood']) > 8:
+                if int(rdata[server, chan]['flood']) > 16:
                     f_time = pc.cputime() - float(rdata[server, chan]['flood_time'])
                     # threshold reached for time and commands, activate flood control
-                    if round(f_time) <= 10:
+                    if round(f_time) <= 20:
                         rdata[server, chan]['flood_cont'] = True
                         rdata[server, chan]['flood_timer'] = pc.cputime()
                         pc.privmsg_(server, channel, '\x034* Flood Control Activated *\x03')
@@ -553,7 +553,6 @@ async def evt_privmsg(server, message):
 
         # --------------------------------------------------------------------------------------------------------------
         # !bomb
-        # ################################### NOT FINISHED
         if mdata[3].lower() == b':!bomb':
             if len(mdata) == 5:
                 # increase flood time
@@ -564,7 +563,6 @@ async def evt_privmsg(server, message):
                 # pc.privmsg_(server, channel, 'Bomb!')
                 duck_bomb(server, dchannel, dusername, targ)
             return
-        # #################################################
 
         # --------------------------------------------------------------------------------------------------------------
         # !swim
@@ -598,7 +596,7 @@ async def evt_privmsg(server, message):
 
         # --------------------------------------------------------------------------------------------------------------
         # !daily
-        if mdata[3].lower() == b':!daily':
+        if mdata[3].lower() == b':!daily' or mdata[3].lower() == b':!dshot':
             # increase flood time
             rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
             tstat(server, channel, 'daily')
@@ -606,7 +604,7 @@ async def evt_privmsg(server, message):
 
         # --------------------------------------------------------------------------------------------------------------
         # !weekly
-        if mdata[3].lower() == b':!weekly':
+        if mdata[3].lower() == b':!weekly' or mdata[3].lower() == b':!wshot':
             # increase flood time
             rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
             tstat(server, channel, 'weekly')
@@ -614,7 +612,7 @@ async def evt_privmsg(server, message):
 
         # --------------------------------------------------------------------------------------------------------------
         # !monthly
-        if mdata[3].lower() == b':!monthly':
+        if mdata[3].lower() == b':!monthly' or mdata[3].lower() == b':!mshot':
             # increase flood time
             rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
             tstat(server, channel, 'monthly')
@@ -633,7 +631,7 @@ async def evt_privmsg(server, message):
         if mdata[3].lower() == b':!about':
             # increase flood time
             rdata[server, chan]['flood'] = int(rdata[server, chan]['flood']) + 1
-            pc.privmsg_(server, channel, '[ABOUT: ' + rdata['ptitle'] + ' ' + rdata['pversion'] + ' zCore Plugin Module][AUTHOR: ' + rdata['pauthor'] + '][WEBSITE: ' + rdata['pweb'] + ']')
+            pc.privmsg_(server, channel, '[ABOUT: ' + rdata['ptitle'] + ' ' + rdata['pversion'] + ' zCore Plugin Module] [AUTHOR: ' + rdata['pauthor'] + '] [WEBSITE: ' + rdata['pweb'] + ' ]')
             return
 
         return
@@ -688,6 +686,36 @@ async def evt_privmsg(server, message):
                 else:
                     return 0
         # --------------------------------------------------------------------------------------------------------------
+        # /msg duckhunt view <channel> <data>
+        # allows admins/botmasters to view timed data (TO FINISH FOR v2.0.0 RELEASE)
+        # <data> can be:
+        # # # # # # # # # 'soggy', 'bombed', 'trigger_lock', 'bread_lock', 'camp_count', 'expl_ammo', 'illegal_camping'
+        # # # # # # # # # 'bedazzled', 'sabotage', 'gun_grease', 'sunglasses', 'silencer', 'lucky_charm', 'accident_insurance'
+        # # # # # # # # # 'rain_coat', 'duck_bomb', 'confiscated', 'disarmed', 'popcorn', 'camping_permit', 'fatigue'
+        # this will send a NOTICE message to the admin/botmaster detailing all users and data in the specified lists.
+        # if mdata[3].lower() == b':view' and pc.is_admin(server, dusername) is True:
+        #    if len(mdata) < 6:
+        #        pc.notice_(server, username, '[DuckHunt] * Invalid input. Use: /msg ' + rdata[server, 'botname'] + ' view #channel <data>')
+        #        return
+        #    if b'#' not in mdata[4]:
+        #        pc.notice_(server, username, '[DuckHunt] * Invalid request. Channel name must contain a hash "#channel"')
+        #        return
+        #    chan = mdata[4].lower()
+        #    chan = chan.decode()
+        #    if pc.istok(rdata[server, 'channels'], chan, ',') is False:
+        #        pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
+        #        return
+        #    dat = mdata[5].decode()
+        #    dat = dat.lower()
+        #    if pc.cnfexists(rdata[server, chan]['config_file'], server + '_' + chan, dat) is False:
+        #        pc.notice_(server, username, '[DuckHunt] * Invalid request. Data ' + mdata[5].decode() + " doesn't exist.")
+        #        return
+        #    # determine data type
+        #
+        #    # build data message
+        #
+        #    # send data message
+        # --------------------------------------------------------------------------------------------------------------
         # /msg duckhunt maxducks <channel> <X>
         # sets the maxducks value (numbers only!)
         if mdata[3].lower() == b':maxducks' and pc.is_botmaster(dusername) is True:
@@ -703,6 +731,9 @@ async def evt_privmsg(server, message):
                 pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
                 return
             val = mdata[5].decode()
+            if mdata[5].lower() == b'view':
+                pc.notice_(server, username, '[DuckHunt] * The current maxducks value for ' + mdata[4].decode() + ' is: ' + str(rdata[server, chan.replace('#', '')]['maxducks']) + ' ducks.')
+                return
             if val.isnumeric() is False or isinstance(str(val), float) is True:
                 pc.notice_(server, username, '[DuckHunt] * Invalid request. Value must be an integer.')
                 return
@@ -728,6 +759,9 @@ async def evt_privmsg(server, message):
                 pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
                 return
             val = mdata[5].decode()
+            if mdata[5].lower() == b'view':
+                pc.notice_(server, username, '[DuckHunt] * The current spawntime value for ' + mdata[4].decode() + ' is: ' + str(rdata[server, chan.replace('#', '')]['spawntime']) + ' seconds.')
+                return
             if val.isnumeric() is False or isinstance(str(val), float) is True:
                 pc.notice_(server, username, '[DuckHunt] * Invalid request. Value must be an integer.')
                 return
@@ -753,6 +787,9 @@ async def evt_privmsg(server, message):
                 pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
                 return
             val = mdata[5].decode()
+            if mdata[5].lower() == b'view':
+                pc.notice_(server, username, '[DuckHunt] * The current flytime value for ' + mdata[4].decode() + ' is: ' + str(rdata[server, chan.replace('#', '')]['flytime']) + ' seconds.')
+                return
             if val.isnumeric() is False or isinstance(str(val), float) is True:
                 pc.notice_(server, username, '[DuckHunt] * Invalid request. Value must be an integer.')
                 return
@@ -778,6 +815,9 @@ async def evt_privmsg(server, message):
                 pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
                 return
             val = mdata[5].decode()
+            if mdata[5].lower() == b'view':
+                pc.notice_(server, username, '[DuckHunt] * The current duckexp value for ' + mdata[4].decode() + ' is: ' + str(rdata[server, chan.replace('#', '')]['duckexp'] + ' xp.'))
+                return
             if val.isnumeric() is False or isinstance(str(val), float) is True:
                 pc.notice_(server, username, '[DuckHunt] * Invalid request. Value must be an integer.')
                 return
@@ -803,6 +843,9 @@ async def evt_privmsg(server, message):
                 pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
                 return
             val = mdata[5].decode()
+            if mdata[5].lower() == b'view':
+                pc.notice_(server, username, '[DuckHunt] * The current duckfear value for ' + mdata[4].decode() + ' is: ' + str(rdata[server, chan.replace('#', '')]['duckfear']) + ' fear points.')
+                return
             if val.isnumeric() is False or isinstance(str(val), float) is True:
                 pc.notice_(server, username, '[DuckHunt] * Invalid request. Value must be an integer.')
                 return
@@ -828,6 +871,9 @@ async def evt_privmsg(server, message):
                 pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
                 return
             val = mdata[5].decode()
+            if mdata[5].lower() == b'view':
+                pc.notice_(server, username, '[DuckHunt] * The current duckgold value for ' + mdata[4].decode() + ' is: ' + str(rdata[server, chan.replace('#', '')]['duckgold']) + '%.')
+                return
             if val.isnumeric() is False or isinstance(str(val), float) is True:
                 pc.notice_(server, username, '[DuckHunt] * Invalid request. Value must be an integer.')
                 return
@@ -853,6 +899,9 @@ async def evt_privmsg(server, message):
                 pc.notice_(server, username, '[DuckHunt] * Invalid input. Channel ' + mdata[4].decode() + ' is not a DuckHunt channel on this server instance.')
                 return
             val = mdata[5].decode()
+            if mdata[5].lower() == b'view':
+                pc.notice_(server, username, '[DuckHunt] * The current friendrate value for ' + mdata[4].decode() + ' is: ' + str(rdata[server, chan.replace('#', '')]['friendrate']) + '%.')
+                return
             if val.isnumeric() is False or isinstance(str(val), float) is True:
                 pc.notice_(server, username, '[DuckHunt] * Invalid request. Value must be an integer.')
                 return
@@ -1306,7 +1355,7 @@ def ducktimer(server, channel):
             # flood control is not activated, time window reached, reset counts
             if rdata[server, chan]['flood_cont'] is False:
                 f_time = pc.cputime() - float(rdata[server, chan]['flood_time'])
-                if round(f_time) >= 10:
+                if round(f_time) >= 20:
                     rdata[server, chan]['flood_time'] = pc.cputime()
                     rdata[server, chan]['flood'] = 0
             # flood control is activated, check time and deactivate when time window reached
@@ -1750,26 +1799,24 @@ def time_data(server, channel, user, eff_name, args='', data=''):
                 ftg_p = pc.gettok(duckinfo(server, dchannel, user, 'fatigue'), 0, '^')
                 if ftg_p == '0':
                     continue
-                # if fatigue time is greater than 8 hours, remove all fatigue
+                # if fatigue time is greater than 6 hours, remove all fatigue
                 if round(timem) > pc.hour6():
                     duckinfo(server, dchannel, user, 'fatigue', '0^' + str(pc.cputime()))
                     continue
-                # if fatigue time is greater than 4 hours, deduct accordingly, 60 fatigue points
+                # if fatigue time is greater than 4 hours, deduct accordingly, 30 fatigue points
                 if round(timem) >= pc.hour4():
-                    if int(ftg_p) <= 60:
-                    # if 60 >= int(ftg_p) > 0:
+                    if int(ftg_p) <= 30:
                         duckinfo(server, dchannel, user, 'fatigue', '0^' + str(pc.cputime()))
                     else:
-                        math = int(ftg_p) - 60
+                        math = int(ftg_p) - 30
                         duckinfo(server, dchannel, user, 'fatigue', str(math) + '^' + str(pc.cputime()))
                     continue
-                # if fatigue time is greather than 1 hour, deduct accordingly, 20 fatigue points per hour
+                # if fatigue time is greather than 1 hour, deduct accordingly, 10 fatigue points per hour
                 if round(timem) >= pc.hour1():
-                    if int(ftg_p) <= 20:
-                    # if 10 >= int(ftg_p) > 0:
+                    if int(ftg_p) <= 10:
                         duckinfo(server, dchannel, user, 'fatigue', '0^' + str(pc.cputime()))
                     else:
-                        ftg_p = int(ftg_p) - 20
+                        ftg_p = int(ftg_p) - 10
                         duckinfo(server, dchannel, user, 'fatigue', str(ftg_p) + '^' + str(pc.cputime()))
                 continue
 
@@ -2740,9 +2787,9 @@ def shopprice(server, channel, user, itemid):
     # 24 coffee --------------------------------------------------------------------------------------------------------
     if int(itemid) == 26:
         if pc.istok_n(rdata[server, chan]['fatigue'], duser, ',', '^', 0) is True:
-            return 300
+            return 600
         else:
-            return 100
+            return 300
     # unkown item/ID ---------------------------------------------------------------------------------------------------
     return 0
 
@@ -3599,7 +3646,7 @@ def bang(server, channel, user):
             if rdata[server, chan]['fear_factor'] >= rdata[server, chan]['duckfear']:
                 for x in range(len(rdata[server, chan]['duck'])):
                     if rdata[server, chan]['duck'][x] != '0':
-                        rdata[server, chan]['duck'][x] = '0'  # Rest Duck ID data
+                        rdata[server, chan]['duck'][x] = '0'  # Reset Duck ID data
                         rdata[server, chan]['golduckxp'][x] = '0'  # Reset golden duck XP variable (if applicable)
                     continue
                 pc.privmsg_(server, channel, b"\x034Frightened by so much noise, all ducks in the area have fled.\x03     \x0314\xc2\xb7\xc2\xb0'`'\xc2\xb0-.,\xc2\xb8\xc2\xb8.\xc2\xb7\xc2\xb0'`")
@@ -3667,7 +3714,7 @@ def bang(server, channel, user):
             if 5000 > int(xp) >= 1500:
                 rxp = dmg + 1
 
-            # gunconf off is off, extra -4 xp
+            # gunconf is off, extra -4 xp
             if game_rules(server, dchannel, 'gunconf') == 'off':
                 rxp = rxp + 4
 
@@ -3972,9 +4019,9 @@ def bang(server, channel, user):
                         pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
                         pc.privmsg_(server, channel, user.decode() + ' > Has been penalized for illegal camping! ' + user.decode() + ' cannot hunt for 2 hours. \x034[Illegal Camping]')
 
-                # add 1 fatigue points for normal duck
+                # add 2 fatigue points for normal duck
                 if game_rules(server, dchannel, 'fatigue') == 'on':
-                    ftg_points = ftg_points + 1
+                    ftg_points = ftg_points + 2
                     duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
                 return
 
@@ -4106,9 +4153,9 @@ def bang(server, channel, user):
                             pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
                             pc.privmsg_(server, channel, user.decode() + ' > Has been penalized for illegal camping! ' + user.decode() + ' cannot hunt for 2 hours. \x034[Illegal Camping]')
 
-                    # add 2 fatigue points for golden duck
+                    # add 4 fatigue points for golden duck
                     if game_rules(server, dchannel, 'fatigue') == 'on':
-                        ftg_points = ftg_points + 2
+                        ftg_points = ftg_points + 4
                         duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
                     return
 
@@ -4708,9 +4755,9 @@ def bef(server, channel, user):
                         pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
                         pc.privmsg_(server, channel, user.decode() + ' > Has been penalized for illegal camping! ' + user.decode() + ' cannot hunt for 2 hours. \x034[Illegal Camping]')
 
-                # add 1 fatigue points for normal duck
+                # add 2 fatigue points for normal duck
                 if game_rules(server, dchannel, 'fatigue') == 'on':
-                    ftg_points = ftg_points + 1
+                    ftg_points = ftg_points + 2
                     duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
                 return
 
@@ -4842,9 +4889,9 @@ def bef(server, channel, user):
                             pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'illegal_camping', rdata[server, chan]['illegal_camping'])
                             pc.privmsg_(server, channel, user.decode() + ' > Has been penalized for illegal camping! ' + user.decode() + ' cannot hunt for 2 hours. \x034[Illegal Camping]')
 
-                    # add 2 fatigue points for golden duck
+                    # add 4 fatigue points for golden duck
                     if game_rules(server, dchannel, 'fatigue') == 'on':
-                        ftg_points = ftg_points + 2
+                        ftg_points = ftg_points + 4
                         duckinfo(server, dchannel, duser, 'fatigue', str(ftg_points) + '^' + str(pc.cputime()))
                     return
 
@@ -5450,7 +5497,7 @@ def tstat(server, channel, args=''):
 
     # !monthly
     if args == 'monthly':
-        pc.privmsg_(server, channel, "\x033[Super DuckHunt] " + channel.decode() + " Monthly duck statistics:\x037 " + top_month[0] + " shot | " + top_month[1] + " fed\x03")
+        pc.privmsg_(server, channel, "\x033[Super DuckHunt] " + channel.decode() + " Monthly Duck Statistics:\x037 " + top_month[0] + " shot | " + top_month[1] + " fed\x03")
         return
     return
 
