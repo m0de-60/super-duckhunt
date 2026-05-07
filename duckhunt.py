@@ -1839,14 +1839,14 @@ def time_data(server, channel, user, eff_name, args='', data=''):
 
                         # player is fatigued and must rest timer
                         if listitem[z] == 'fatigue':
-                            if round(timem) >= pc.hour6():
+                            if round(timem) >= pc.hour2():
                                 if pc.numtok(rdata[server, chan]['fatigue'], ',') < 2:
                                     newtok = '0'
                                 else:
                                     newtok = pc.deltok(rdata[server, chan]['fatigue'], tok[x], ',')
                                 pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'fatigue', newtok)
                                 rdata[server, chan]['fatigue'] = newtok
-                                duckinfo(server, dchannel, user, 'fatigue', '0^' + str(pc.cputime()))
+                                duckinfo(server, dchannel, user, 'fatigue', '40^' + str(pc.cputime()))
                                 break
 
                         # ##################################################################################################
