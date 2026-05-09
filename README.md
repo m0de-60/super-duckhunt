@@ -12,13 +12,15 @@ Click here for OPERATOR'S GUIDE (INSTALLATION & CONFIGURATION) <b>[COMING SOON]<
 
 Multi-threaded and asyncronous, better and faster, ported from the standalone v1.1.4 with new features and code!
 
-<b>BETA SCRIPT: This is the current ultra beta source code and progress on Super DuckHunt v1.9.9 which is a zCore port of v1.1.4 with some new features and mechanics.</b>
+<b>BETA SCRIPT: This is the current beta source code and progress on Super DuckHunt v1.9.9 which is a zCore port of v1.1.4 (v2.0.0 prototype) with some new features and mechanics.</b>
 
 <H2>VERSION & DEVELOPMENT NOTES:</H2>
 
-5-7-2025 Further and final adjustments made to fatigue. A couple small bug fixes/typo corrections in game text. Also made adjustments to flood control. Added an option to botmaster commands for botmasters to view certain configuration settings. (Will be detailed in the upcomong operator's guide. Working on it.)
+5-8-2026 A few text color changes and text tweaks.
 
-5-3-2025 Further, and should be final, adjustments to illegal camping system. Also changed the befriending/feeding messages when using !bef to show reaction time in the success message as well as tweaked the structure
+5-7-2026 Further and final adjustments made to fatigue. A couple small bug fixes/typo corrections in game text. Also made adjustments to flood control. Added an option to botmaster commands for botmasters to view certain configuration settings. (Will be detailed in the upcomong operator's guide. Working on it.)
+
+5-3-2026 Further, and should be final, adjustments to illegal camping system. Also changed the befriending/feeding messages when using !bef to show reaction time in the success message as well as tweaked the structure
 of the text to look more similar to when shooting a duck.
 ```dif
 BEFORE: [DuckHunt] Neo_Nemesis > FRIEND     The duck ate the piece of popcorn!     \_O< QUAACK!   [BEFRIENDED DUCKS: 2395] [+15 xp]
