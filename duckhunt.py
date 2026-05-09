@@ -2434,9 +2434,9 @@ def duckstats(server, channel, user, ruser, ext=''):
 
     fatigue = str(duckinfo(server, dchannel, druser, 'fatigue'))
     fatigue = int(pc.gettok(fatigue, 0, '^'))
-    if fatigue <= 25:
+    if fatigue <= 50:
         fatigue = '\x033,1 ' + str(fatigue) + '%'
-    elif 25 < fatigue <= 70:
+    elif 50 < fatigue <= 70:
         fatigue = '\x038,1 ' + str(fatigue) + '%'
     elif fatigue > 70:
         fatigue = '\x034,1 ' + str(fatigue) + '%'
