@@ -18,7 +18,7 @@ Multi-threaded and asyncronous, better and faster, ported from the standalone v1
 
 5-8-2026 A few text color changes and text tweaks.
 
-5-7-2026 Further and final adjustments made to fatigue. A couple small bug fixes/typo corrections in game text. Also made adjustments to flood control. Added an option to botmaster commands for botmasters to view certain configuration settings. (Will be detailed in the upcomong operator's guide. Working on it.)
+5-7-2026 Further and final adjustments made to fatigue. A couple small bug fixes/typo corrections in game text. Also made adjustments to flood control. Added an option to botmaster commands for botmasters to view certain configuration settings live. (Will be detailed in the upcomong operator's guide. Working on it.)
 
 5-3-2026 Further, and should be final, adjustments to illegal camping system. Also changed the befriending/feeding messages when using !bef to show reaction time in the success message as well as tweaked the structure
 of the text to look more similar to when shooting a duck.
