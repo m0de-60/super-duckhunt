@@ -4,7 +4,7 @@
 
 <h2><b>BETA TESTING / IN DEVELOPMENT.</b> THIS IS NOT AN OFFICIAL PUBLIC RELEASE!</h2>
 
-Click here for OPERATOR'S GUIDE (INSTALLATION & CONFIGURATION) <b>[COMING SOON]</b>
+<a href="https://m0de-60.github.io/super-duckhunt-web/duckhunt-1-9-9-operators-guide.htm">Click here for OPERATOR'S GUIDE (INSTALLATION & CONFIGURATION)</a>
 
 <a href="https://m0de-60.github.io/super-duckhunt-web/super-duckhunt-help.htm">Click here for HELP PAGE (COMMANDS AND INFO)</a>
 
@@ -15,6 +15,8 @@ Multi-threaded and asyncronous, better and faster, ported from the standalone v1
 <b>BETA SCRIPT: This is the current beta source code and progress on Super DuckHunt v1.9.9 which is a zCore port of v1.1.4 (v2.0.0 prototype) with some new features and mechanics.</b>
 
 <H2>VERSION & DEVELOPMENT NOTES:</H2>
+
+5-9-2026 <a href="https://m0de-60.github.io/super-duckhunt-web/duckhunt-1-9-9-operators-guide.htm">Operators guide</a> has been published and uploaded to the website.
 
 5-8-2026 A few text color changes and text tweaks.
 
