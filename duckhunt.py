@@ -138,6 +138,20 @@ def plugin_init_():
             rdata[server, chan]['top_stat']['weekly'] = pc.gettok(t_shot, 1, ',')
             rdata[server, chan]['top_stat']['monthly'] = pc.gettok(t_shot, 2, ',')
             rdata[server, chan]['top_stat']['totalstat'] = pc.gettok(t_shot, 3, ',')
+            # user data map
+            rdata[server, chan]['users'] = {}
+            if pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', 'cache') != '0':
+                parser = RawConfigParser()
+                parser.optionxform = str
+                parser.read(rdata[server, chan]['config_file'])
+                tdat = ''
+                for name, value in parser.items(server + '_' + chan + '_ducks'):
+                    datkey = '%s' % name
+                    if datkey == 'cache':
+                        continue
+                    rdata[server, chan]['users'][datkey] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', datkey)
+                    mprint(f'DATA {datkey}: {rdata[server, chan]['users'][datkey]}')
+                    continue
             # flood protection values
             rdata[server, chan]['flood_check'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'floodcheck')
             mprint(f'Configuration from {rdata[server, chan]['config_file']} loaded successfully...')
@@ -1681,11 +1695,9 @@ def ctrl_data(server, channel, user, ctrl_name, args='', data=''):
         # ctrl_data('serverid', '#channel', 'username', 'confiscated', 'rem') ------------------------------------------
         # remove user name from confiscated list, if it exists in the list
         if args == 'rem':
-            # print(f'HERE 932')
             if rdata[server, chan]['confiscated'] == duser:
                 rdata[server, chan]['confiscated'] = '0'
                 pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'confiscated', rdata[server, chan]['confiscated'])
-                # print(f'HERE 932')
                 return 1
             else:
                 token = rdata[server, chan]['confiscated'].split(',')
@@ -2078,7 +2090,8 @@ def duckinfo(server, channel, user, req, data=''):
     chan = str(channel.replace('#', '')).lower()
     userl = user
     sect = server + '_' + chan + '_ducks'
-    cnfdat = pc.cnfread(rdata[server, chan]['config_file'], sect, userl)
+    # cnfdat = pc.cnfread(rdata[server, chan]['config_file'], sect, userl)
+    cnfdat = rdata[server, chan]['users'][user]
 
     # Ammo rounds, maxrounds, mags, maxmags ----------------------------------------------------------------------------
 
@@ -2092,6 +2105,7 @@ def duckinfo(server, channel, user, req, data=''):
             ammo = pc.reptok(ammo, 0, '?', str(data))
             newdat = pc.reptok(cnfdat, 0, ',', ammo)
             pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, newdat)
+            rdata[server, chan]['users'][user] = newdat
             return 1
 
     # Max Rounds - ammo is Rounds?MaxRounds?Mags?MaxMags ---------------------------------------------------------------
@@ -2104,6 +2118,7 @@ def duckinfo(server, channel, user, req, data=''):
             ammo = pc.reptok(ammo, 2, '?', str(data))
             newdat = pc.reptok(cnfdat, 0, ',', ammo)
             pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, newdat)
+            rdata[server, chan]['users'][user] = newdat
             return 1
     # Magazines - ammo is Rounds?MaxRounds?Mags?MaxMags ----------------------------------------------------------------
     # duckinfo('serverid', '#channel', 'username', 'ammo-m', <data=''>
@@ -2115,6 +2130,7 @@ def duckinfo(server, channel, user, req, data=''):
             ammo = pc.reptok(ammo, 1, '?', str(data))
             newdat = pc.reptok(cnfdat, 0, ',', ammo)
             pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, newdat)
+            rdata[server, chan]['users'][user] = newdat
             return 1
     # Max Magazines - ammo is Rounds?MaxRounds?Mags?MaxMags ------------------------------------------------------------
     # duckinfo('serverid', '#channel', 'username', 'ammo-mr', <data=''>
@@ -2126,6 +2142,7 @@ def duckinfo(server, channel, user, req, data=''):
             ammo = pc.reptok(ammo, 3, '?', str(data))
             newdat = pc.reptok(cnfdat, 0, ',', ammo)
             pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, newdat)
+            rdata[server, chan]['users'][user] = newdat
             return 1
 
     # Bread bread, maxbread, load, maxloaf -----------------------------------------------------------------------------
@@ -2138,6 +2155,7 @@ def duckinfo(server, channel, user, req, data=''):
             bread = pc.reptok(bread, 0, '?', str(data))
             newdat = pc.reptok(cnfdat, 11, ',', bread)
             pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, newdat)
+            rdata[server, chan]['users'][user] = newdat
             return 1
     if req == 'bread-mb':
         bread = pc.gettok(cnfdat, 11, ',')
@@ -2147,6 +2165,7 @@ def duckinfo(server, channel, user, req, data=''):
             bread = pc.reptok(bread, 1, '?', str(data))
             newdat = pc.reptok(cnfdat, 11, ',', bread)
             pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, newdat)
+            rdata[server, chan]['users'][user] = newdat
             return 1
     if req == 'bread-l':
         bread = pc.gettok(cnfdat, 11, ',')
@@ -2156,6 +2175,7 @@ def duckinfo(server, channel, user, req, data=''):
             bread = pc.reptok(bread, 2, '?', str(data))
             newdat = pc.reptok(cnfdat, 11, ',', bread)
             pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, newdat)
+            rdata[server, chan]['users'][user] = newdat
             return 1
     if req == 'bread-ml':
         bread = pc.gettok(cnfdat, 11, ',')
@@ -2165,6 +2185,7 @@ def duckinfo(server, channel, user, req, data=''):
             bread = pc.reptok(bread, 3, '?', str(data))
             newdat = pc.reptok(cnfdat, 11, ',', bread)
             pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, newdat)
+            rdata[server, chan]['users'][user] = newdat
             return 1
 
     # Player stats info ------------------------------------------------------------------------------------------------
@@ -2174,6 +2195,7 @@ def duckinfo(server, channel, user, req, data=''):
         else:
             duck_info = pc.reptok(cnfdat, 1, ',', str(str(data)))
             pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
+            rdata[server, chan]['users'][user] = duck_info
             return 1
     if req == 'gducks':
         if data == '':
@@ -2181,6 +2203,7 @@ def duckinfo(server, channel, user, req, data=''):
         else:
             duck_info = pc.reptok(cnfdat, 2, ',', str(data))
             pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
+            rdata[server, chan]['users'][user] = duck_info
             return 1
     if req == 'xp':
         if data == '':
@@ -2188,6 +2211,7 @@ def duckinfo(server, channel, user, req, data=''):
         else:
             duck_info = pc.reptok(cnfdat, 3, ',', str(str(data)))
             pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
+            rdata[server, chan]['users'][user] = duck_info
             return 1
     if req == 'level':
         if data == '':
@@ -2195,6 +2219,7 @@ def duckinfo(server, channel, user, req, data=''):
         else:
             duck_info = pc.reptok(cnfdat, 4, ',', str(data))
             pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
+            rdata[server, chan]['users'][user] = duck_info
             return 1
     if req == 'levelup':
         if data == '':
@@ -2202,6 +2227,7 @@ def duckinfo(server, channel, user, req, data=''):
         else:
             duck_info = pc.reptok(cnfdat, 5, ',', str(data))
             pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
+            rdata[server, chan]['users'][user] = duck_info
             return 1
     if req == 'effects' or req == 'fatigue':  # NOT USED AS EFFECTS TO BE RE-ASSIGNED AS FATIGUE
         if data == '':
@@ -2209,6 +2235,7 @@ def duckinfo(server, channel, user, req, data=''):
         else:
             duck_info = pc.reptok(cnfdat, 6, ',', str(data))
             pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
+            rdata[server, chan]['users'][user] = duck_info
             return 1
     if req == 'inv':  # NOT USED TO BE RE-ASSIGNED
         if data == '':
@@ -2216,6 +2243,7 @@ def duckinfo(server, channel, user, req, data=''):
         else:
             duck_info = pc.reptok(cnfdat, 7, ',', str(data))
             pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
+            rdata[server, chan]['users'][user] = duck_info
             return 1
     # guninfo =
     if req == 'guninfo':
@@ -2224,6 +2252,7 @@ def duckinfo(server, channel, user, req, data=''):
         else:
             duck_info = pc.reptok(cnfdat, 8, ',', str(data))
             pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
+            rdata[server, chan]['users'][user] = duck_info
             return 1
     if req == 'best':
         if data == '':
@@ -2231,6 +2260,7 @@ def duckinfo(server, channel, user, req, data=''):
         else:
             duck_info = pc.reptok(cnfdat, 9, ',', str(data))
             pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
+            rdata[server, chan]['users'][user] = duck_info
             return 1
     if req == 'accidents':
         if data == '':
@@ -2238,6 +2268,7 @@ def duckinfo(server, channel, user, req, data=''):
         else:
             duck_info = pc.reptok(cnfdat, 10, ',', str(data))
             pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
+            rdata[server, chan]['users'][user] = duck_info
             return 1
     if req == 'friend':
         if data == '':
@@ -2245,6 +2276,7 @@ def duckinfo(server, channel, user, req, data=''):
         else:
             duck_info = pc.reptok(cnfdat, 12, ',', str(data))
             pc.cnfwrite(rdata[server, chan]['config_file'], sect, userl, duck_info)
+            rdata[server, chan]['users'][user] = duck_info
             return 1
     return -1
 
@@ -3451,6 +3483,7 @@ def bang(server, channel, user):
     if not pc.cnfexists(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', duser):
         dinfo = '7?3?7?3,0,0,0,1,200,0^' + str(pc.cputime()) + ',0,75?80?80,0,0,12?12?3?3,0'
         pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', duser, str(dinfo))
+        rdata[server, chan]['users'][duser] = str(dinfo)
         if pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', 'cache') == '0':
             pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', 'cache', '1')
 
@@ -4390,6 +4423,7 @@ def bef(server, channel, user):
     if not pc.cnfexists(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', duser):
         dinfo = '7?3?7?3,0,0,0,1,200,0^' + str(pc.cputime()) + ',0,75?80?80,0,0,12?12?3?3,0'
         pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', duser, str(dinfo))
+        rdata[server, chan]['users'][duser] = str(dinfo)
         if pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', 'cache') == '0':
             pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', 'cache', '1')  # ???
 
@@ -4554,7 +4588,7 @@ def bef(server, channel, user):
                 if rdata[server, chan]['fatigue'] == '0':
                     rdata[server, chan]['fatigue'] = duser + '^' + str(pc.cputime())
                 else:
-                    rdata[server, chan]['fatigue'] = rdata[server, chan]['fatigue'] + ',' + user + '^' + str(pc.cputime())
+                    rdata[server, chan]['fatigue'] = rdata[server, chan]['fatigue'] + ',' + duser + '^' + str(pc.cputime())
                 pc.cnfwrite(rdata[server, chan]['config_file'], server + '_' + chan, 'fatigue', rdata[server, chan]['fatigue'])
                 pc.privmsg_(server, channel, user.decode() + ' > \x034has collapsed from fatigue and must rest for 2 hours!   [-' + str(rxp) + ' xp]\x03')
                 return
@@ -5014,7 +5048,7 @@ def duck_bomb(server, channel, user, target):
 
     # can't bomb the bot
     if target.lower() == rdata[server, 'botname'].lower():
-        pc.notice_(server, user.encode(), 'Nice try ;-)')
+        pc.privmsg_(server, channel.encode(), 'Nice try ;-)')
         return
 
     # target not in channel
@@ -5033,7 +5067,7 @@ def duck_bomb(server, channel, user, target):
 
     # can't bomb yourself
     if target.lower() == user.lower():
-        pc.notice_(server, user.encode(), "Don't do that to yourself!")
+        pc.privmsg_(server, channel.encode(), "Don't do that to yourself!")
         return
 
     # target is already bombed
@@ -5051,7 +5085,7 @@ def duck_bomb(server, channel, user, target):
             timeleft = pc.gettok_n(rdata[server, chan]['duck_bomb'], user, ',', '^', 0, 2)
             timemath = pc.cputime() - float(timeleft)
             timeval = pc.timeconvert(timemath)
-            pc.privmsg_(server, channel.encode(), "You've recently used your limit of duck bombings within the last 24 hours. Try again in: " + timeval)
+            pc.notice_(server, user.encode(), "You've recently used your limit of duck bombings within the last 24 hours. Try again in: " + timeval)
             return
         # if 1 or more bombs left
         elif int(bombent) > 0:
@@ -5077,7 +5111,7 @@ def duck_bomb(server, channel, user, target):
         pc.privmsg_(server, channel.encode(), msg)
 
     # target has rain coat
-    if pc.istok_n(rdata[server, chan]['rain_coat'], user, ',', '^', 0) is True:
+    if pc.istok_n(rdata[server, chan]['rain_coat'], target, ',', '^', 0) is True:
         time_data(server, channel, user, 'rain_coat', 'rem')
         msg = user + ' > Calls in a duck bombing on ' + target + '. A squadron of 50 duck friends, flying in formation, swoop down dropping duck bombs all over ' + target + '. Thanks to a Rain Coat ' + target + ' is shielded from the duck bombs, but can no longer use the Rain Coat.'
         pc.privmsg_(server, channel.encode(), msg)
@@ -5570,35 +5604,63 @@ def stat_reset(server, channel):
         pc.cnfdelete(rdata[server, chan]['config_file'], sect, str(datkey))
         continue
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'cache', '0')
+    rdata[server, chan]['users'] = {}
 
     # clear special item and effects storage
     sect = server + '_' + chan
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'bedazzled', '0')
+    rdata[server, chan]['bedazzled'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'soggy', '0')
+    rdata[server, chan]['soggy'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'sabotage', '0')
+    rdata[server, chan]['sabotage'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'expl_ammo', '0')
+    rdata[server, chan]['expl_ammo'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'gun_grease', '0')
+    rdata[server, chan]['gun_grease'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'trigger_lock', '0')
+    rdata[server, chan]['trigger_lock'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'sunglasses', '0')
+    rdata[server, chan]['sunglasses'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'silencer', '0')
+    rdata[server, chan]['silencer'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'lucky_charm', '0')
+    rdata[server, chan]['lucky_charm'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'accident_insurance', '0')
+    rdata[server, chan]['accident_insurance'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'rain_coat', '0')
+    rdata[server, chan]['rain_coat'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'duck_bomb', '0')
+    rdata[server, chan]['duck_bomb'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'bread_lock', '0')
+    rdata[server, chan]['bread_lock'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'popcorn', '0')
+    rdata[server, chan]['popcorn'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'confiscated', '0')
+    rdata[server, chan]['confiscated'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'disarmed', '0')
+    rdata[server, chan]['disarmed'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'bombed', '0')
+    rdata[server, chan]['bombed'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'duck_jam', '0')
+    rdata[server, chan]['duck_jam'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'jammed', '0')
+    rdata[server, chan]['jammed'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'camping_permit', '0')
+    rdata[server, chan]['camping_permit'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'camp_count', '0')
+    rdata[server, chan]['camp_count'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'illegal_camping', '0')
+    rdata[server, chan]['illegal_camping'] = '0'
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'fatigue', '0')
+    rdata[server, chan]['fatigue'] = '0'
 
     # reset tshot
     pc.cnfwrite(rdata[server, chan]['config_file'], sect, 'topstat', '0^0,0^0,0^0,0^0')
+    rdata[server, chan]['top_stat']['daily'] = '0^0'
+    rdata[server, chan]['top_stat']['weekly'] = '0^0'
+    rdata[server, chan]['top_stat']['monthly'] = '0^0'
+    rdata[server, chan]['top_stat']['totalstat'] = '0^0'
 
     return
 
