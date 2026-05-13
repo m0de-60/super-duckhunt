@@ -150,7 +150,7 @@ def plugin_init_():
                     if datkey == 'cache':
                         continue
                     rdata[server, chan]['users'][datkey] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', datkey)
-                    mprint(f'DATA {datkey}: {rdata[server, chan]['users'][datkey]}')
+                    # mprint(f'DATA {datkey}: {rdata[server, chan]['users'][datkey]}')
                     continue
             # flood protection values
             rdata[server, chan]['flood_check'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'floodcheck')
