@@ -16,6 +16,8 @@ Multi-threaded and asyncronous, better and faster, ported from the standalone v1
 
 <H2>VERSION & DEVELOPMENT NOTES:</H2>
 
+5-20-2026 Another bug fix in !bomb, when bombing a player who has a raincoat, the bomb was not removing the raincoat as it should. Fixed a bug in !shop 17 (gun sabotage) where sabotage was not occuring due to a player having a gun lock.
+
 5-12-2026 Fixed a bug in !bomb that was causing the player to be bombed twice consectutively, second time magically with having a rain coat, even if the player had not purchased one from the shop. Fixed a bug in !duckstats that was causing the game to crash when multiple users would call !duckstats around the same point in time. Fixed a bug in !bef that was causing a crash when trying to amend fatigue incorrectly. Added player stats info to the data map/hash table and changed the behavior of player stats reading/writing to retreive and alter data in the data map/hash table first, before amending to the configuration file. 
 
 5-9-2026 <a href="https://m0de-60.github.io/super-duckhunt-web/duckhunt-1-9-9-operators-guide.htm">Operators guide</a> has been published and uploaded to the website.
