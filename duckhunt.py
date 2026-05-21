@@ -3528,11 +3528,15 @@ def bang(server, channel, user):
         return
 
     # gun is sabotaged
-    # add duck exists to this statement
-    if pc.iistok(rdata[server, chan]['sabotage'], duser, ',') is True and pc.istok_n(rdata[server, chan]['trigger_lock'], duser, ',', '^', 0) is False:
-        time_data(server, channel, duser, 'sabotage', 'rem')
-        pc.privmsg_(server, channel, user.decode() + ' > \x0314*CLICK PFFFFT*\x03     \x034Your gun was sabotaged.\x03')
-        return
+    if pc.iistok(rdata[server, chan]['sabotage'], duser, ',') is True:
+        if ducksdata(server, dchannel) > 0:
+            time_data(server, channel, duser, 'sabotage', 'rem')
+            pc.privmsg_(server, channel, user.decode() + ' > \x0314*CLICK PFFFFT*\x03     \x034Your gun was sabotaged.\x03')
+            return
+        elif ducksdata(server, dchannel) == 0 and pc.istok_n(rdata[server, chan]['trigger_lock'], duser, ',', '^', 0) is False:
+            time_data(server, channel, duser, 'sabotage', 'rem')
+            pc.privmsg_(server, channel, user.decode() + ' > \x0314*CLICK PFFFFT*\x03     \x034Your gun was sabotaged.\x03')
+            return
 
     # shooting data
     # ammo = ''
@@ -5112,7 +5116,7 @@ def duck_bomb(server, channel, user, target):
 
     # target has rain coat
     if pc.istok_n(rdata[server, chan]['rain_coat'], target, ',', '^', 0) is True:
-        time_data(server, channel, user, 'rain_coat', 'rem')
+        time_data(server, channel, target, 'rain_coat', 'rem')
         msg = user + ' > Calls in a duck bombing on ' + target + '. A squadron of 50 duck friends, flying in formation, swoop down dropping duck bombs all over ' + target + '. Thanks to a Rain Coat ' + target + ' is shielded from the duck bombs, but can no longer use the Rain Coat.'
         pc.privmsg_(server, channel.encode(), msg)
 
