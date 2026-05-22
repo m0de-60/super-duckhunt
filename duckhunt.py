@@ -4331,6 +4331,16 @@ def reload(server, channel, user):
     duser = user.decode()
     # duser = duser.lower()
 
+    # new users with no stats
+    if pc.cnfexists(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', duser) is False:
+        if game_rules(server, dchannel, 'infammo') == 'on':
+            pc.privmsg_(server, channel, user.decode() + " > Your gun doesn't need to be reloaded. | Rounds: 7/7 | Magazines: \x02\x033Inf\x02\x03")
+            return
+        if game_rules(server, dchannel, 'infammo') == 'off':
+            pc.privmsg_(server, channel, user.decode() + " > Your gun doesn't need to be reloaded. | Rounds: 7/7 | Magazines: 3/3")
+            return
+        return
+
     # check all timed items/effects
     time_data(server, dchannel, duser, 'all-time')
 
@@ -4367,16 +4377,6 @@ def reload(server, channel, user):
         ctrl_data(server, dchannel, duser, 'jammed', 'rem')
         ctrl_data(server, dchannel, duser, 'duck_jam', 'add')
         pc.privmsg_(server, channel, user.decode() + ' > \x0314*Crr..CLICK*\x03     You unjam your gun.')
-        return
-
-    # new users with no stats
-    if pc.cnfexists(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', duser) is False:
-        if game_rules(server, dchannel, 'infammo') == 'on':
-            pc.privmsg_(server, channel, user.decode() + " > Your gun doesn't need to be reloaded. | Rounds: 7/7 | Magazines: \x02\x033Inf\x02\x03")
-            return
-        if game_rules(server, dchannel, 'infammo') == 'off':
-            pc.privmsg_(server, channel, user.decode() + " > Your gun doesn't need to be reloaded. | Rounds: 7/7 | Magazines: 3/3")
-            return
         return
 
     # reloading gun
