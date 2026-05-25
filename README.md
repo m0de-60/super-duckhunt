@@ -16,6 +16,8 @@ Multi-threaded and asyncronous, better and faster, ported from the standalone v1
 
 <H2>VERSION & DEVELOPMENT NOTES:</H2>
 
+5-25-2026 Bug fix, explosive ammo (and possibly popcorn) were not being deducted properly when the player had 2 ammo/popcorn left. Issue was originally reported with explosive ammo, but when checking through the code I noticed that popcorn may be the same way, and applied similar fix to both.
+
 5-21-2026 Bug fix, game crashing when new users use !reload, order of protocols was not in the proper order. Switched around some processes in !reload and fixed error.
 
 5-20-2026 Another bug fix in !bomb, when bombing a player who has a raincoat, the bomb was not removing the raincoat as it should. Fixed a bug in !shop 17 (gun sabotage) where sabotage was not occuring due to a player having a gun lock when a duck exists.
