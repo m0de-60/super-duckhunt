@@ -3475,6 +3475,7 @@ def bang(server, channel, user):
     chan = dchannel.replace('#', '')
     duser = user.decode()
     # duser = duser.lower()
+    lastexp = False  # For expl_ammo fix
 
     # new users with no stats
     # b'playername' = Rounds?Mags?MaxRounds?MaxMags,Ducks,GoldenDucks,xp,level,levelup,
@@ -3642,15 +3643,16 @@ def bang(server, channel, user):
     # has expl ammo
     if pc.istok_n(rdata[server, chan]['expl_ammo'], duser, ',', '^', 0) is True:
         expammo = pc.gettok_n(rdata[server, chan]['expl_ammo'], duser, ',', '^', 0, 1)
+        if int(expammo) == 1:
+            # used up the last expl_ammo
+            user_data(server, dchannel, duser, 'expl_ammo', 'rem')
+            lastexp = True  # For expl_ammo fix
+            reliability = float(reliability) - 0.03
         if int(expammo) > 1:
             # use 1 expl_ammo
             expammo = int(expammo) - 1
             user_data(server, dchannel, duser, 'expl_ammo', 'edit', str(expammo))
             # extra wear for ammo type
-            reliability = float(reliability) - 0.03
-        if int(expammo) == 1:
-            # used up the last expl_ammo
-            user_data(server, dchannel, duser, 'expl_ammo', 'rem')
             reliability = float(reliability) - 0.03
 
     # reliability deduction
@@ -4068,7 +4070,7 @@ def bang(server, channel, user):
                 ddmg = 1
 
                 # has expl_ammo
-                if pc.istok_n(rdata[server, chan]['expl_ammo'], duser, ',', '^', 0) is True:
+                if pc.istok_n(rdata[server, chan]['expl_ammo'], duser, ',', '^', 0) is True or lastexp is True:
                     ddmg = 2
 
                 duckhp = pc.gettok(duckdata, 2, ',')
@@ -4086,14 +4088,15 @@ def bang(server, channel, user):
                 duckhp = pc.gettok(duckdata, 2, ',')
 
                 # duck survived - expl_ammo
-                if pc.istok_n(rdata[server, chan]['expl_ammo'], duser, ',', '^', 0) is True and int(duckhp) > 2:
-                    ddmg = 2
-                    duckhp = int(duckhp) - int(ddmg)
-                    duckstat = pc.gettok(duckdata, 0, ',') + ',' + pc.gettok(duckdata, 1, ',') + ',' + str(duckhp) + ',' + pc.gettok(duckdata, 3, ',')
-                    rdata[server, chan]['duck'][int(duckid)] = duckstat
-                    duckdata = duckstat
-                    pc.privmsg_(server, channel, user.decode() + ' > \x0314*BANG*\x03     The GOLDEN DUCK surivived!     \x02\x034\\_O< [Life -' + str(ddmg) + ']\x03\x02')
-                    return
+                if pc.istok_n(rdata[server, chan]['expl_ammo'], duser, ',', '^', 0) is True or lastexp is True:
+                    if int(duckhp) > 2:
+                        ddmg = 2
+                        duckhp = int(duckhp) - int(ddmg)
+                        duckstat = pc.gettok(duckdata, 0, ',') + ',' + pc.gettok(duckdata, 1, ',') + ',' + str(duckhp) + ',' + pc.gettok(duckdata, 3, ',')
+                        rdata[server, chan]['duck'][int(duckid)] = duckstat
+                        duckdata = duckstat
+                        pc.privmsg_(server, channel, user.decode() + ' > \x0314*BANG*\x03     The GOLDEN DUCK surivived!     \x02\x034\\_O< [Life -' + str(ddmg) + ']\x03\x02')
+                        return
 
                 # duck survived - regular ammo
                 if pc.istok_n(rdata[server, chan]['expl_ammo'], duser, ',', '^', 0) is False and int(duckhp) > 1:
@@ -4107,8 +4110,9 @@ def bang(server, channel, user):
 
                 # shot down the golden duck
                 expl = False
-                if pc.istok_n(rdata[server, chan]['expl_ammo'], duser, ',', '^', 0) is True and int(duckhp) <= 2:
-                    expl = True
+                if pc.istok_n(rdata[server, chan]['expl_ammo'], duser, ',', '^', 0) is True or lastexp is True:
+                    if int(duckhp) <= 2:
+                        expl = True
 
                 if int(duckhp) == 1 or expl is True:
 
@@ -4419,6 +4423,7 @@ def bef(server, channel, user):
     chan = dchannel.replace('#', '')
     duser = user.decode()
     # duser = duser.lower()
+    popped = False  # For popcorn fix
 
     # new users with no stats
     # b'playername' = Rounds?Mags?MaxRounds?MaxMags,Ducks,GoldenDucks,xp,level,levelup,
@@ -4511,6 +4516,7 @@ def bef(server, channel, user):
         popc = pc.gettok_n(rdata[server, chan]['popcorn'], duser, ',', '^', 0, 1)
         if int(popc) == 1:
             user_data(server, dchannel, duser, 'popcorn', 'rem')
+            popped = True
             popc = 0
         if int(popc) > 1:
             popc = int(popc) - 1
@@ -4540,7 +4546,7 @@ def bef(server, channel, user):
         duckinfo(server, dchannel, duser, 'xp', str(xp))
 
         # has popcorn
-        if pc.istok_n(rdata[server, chan]['popcorn'], duser, ',', '^', 0) is True:
+        if pc.istok_n(rdata[server, chan]['popcorn'], duser, ',', '^', 0) is True or popped is True:
             pc.privmsg_(server, channel, user.decode() + ' > Tosses a piece of popcorn at nothing? There are no ducks in the area. \x034[-1 Popcorn] [-' + str(rxp) + ' xp]\x03')
             return
 
@@ -4730,7 +4736,7 @@ def bef(server, channel, user):
                     xp = int(xp) + exp
                     duckinfo(server, dchannel, duser, 'xp', str(xp))
                     wooid = 'bread'
-                    if pc.istok_n(rdata[server, chan]['popcorn'], duser, ',', '^', 0) is True:
+                    if pc.istok_n(rdata[server, chan]['popcorn'], duser, ',', '^', 0) is True or popped is True:
                         wooid = 'popcorn'
                     pc.privmsg_(server, channel, user.decode() + ' > \x0314FRIEND\x03     The duck ate the piece of ' + str(wooid) + ' in ' + str(reacttime) + ' seconds!     \x02\\_O<   QUAACK!\x02\x033   [+' + str(exp) + ' xp] [BEFRIENDED DUCKS: ' + str(friend) + ']\x03')
 
@@ -4741,7 +4747,7 @@ def bef(server, channel, user):
                     xp = int(xp) + exp
                     duckinfo(server, dchannel, duser, 'xp', str(xp))
                     wooid = 'bread'
-                    if pc.istok_n(rdata[server, chan]['popcorn'], duser, ',', '^', 0) is True:
+                    if pc.istok_n(rdata[server, chan]['popcorn'], duser, ',', '^', 0) is True or popped is True:
                         wooid = 'popcorn'
                     pc.privmsg_(server, channel, user.decode() + ' > \x0314FRIEND\x03     The duck ate the piece of ' + str(wooid) + ' in ' + str(reacttime) + ' seconds!     \x02\\_O<   QUAACK!\x02\x033   [+' + str(exp) + ' xp - Lucky Charm] [BEFRIENDED DUCKS: ' + str(friend) + ']\x03')
 
@@ -4805,7 +4811,7 @@ def bef(server, channel, user):
                 ddmg = 1
                 woid = 'bread'
                 # has popcorn
-                if pc.istok_n(rdata[server, chan]['popcorn'], duser, ',', '^', 0) is True:
+                if pc.istok_n(rdata[server, chan]['popcorn'], duser, ',', '^', 0) is True or popped is True:
                     ddmg = 2
                     woid = 'popcorn'
 
@@ -4822,13 +4828,14 @@ def bef(server, channel, user):
                 duckhp = pc.gettok(duckdata, 2, ',')
 
                 # the duck kept flying - has popcorn
-                if pc.istok_n(rdata[server, chan]['popcorn'], duser, ',', '^', 0) is True and int(duckhp) > 2:
-                    ddmg = 2
-                    duckhp = int(duckhp) - int(ddmg)
-                    duckstat = pc.gettok(duckdata, 0, ',') + ',' + pc.gettok(duckdata, 1, ',') + ',' + str(duckhp) + ',' + pc.gettok(duckdata, 3, ',')
-                    rdata[server, chan]['duck'][int(duckid)] = duckstat
-                    pc.privmsg_(server, channel, user.decode() + ' > \x0314QUACK!!\x03     The GOLDEN DUCK ate the piece of popcorn and kept flying! Try again.     \x034\x02\\_O< [ <3 +' + str(ddmg) + ' ]\x02\x03')
-                    return
+                if pc.istok_n(rdata[server, chan]['popcorn'], duser, ',', '^', 0) is True or popped is True:
+                    if int(duckhp) > 2:
+                        ddmg = 2
+                        duckhp = int(duckhp) - int(ddmg)
+                        duckstat = pc.gettok(duckdata, 0, ',') + ',' + pc.gettok(duckdata, 1, ',') + ',' + str(duckhp) + ',' + pc.gettok(duckdata, 3, ',')
+                        rdata[server, chan]['duck'][int(duckid)] = duckstat
+                        pc.privmsg_(server, channel, user.decode() + ' > \x0314QUACK!!\x03     The GOLDEN DUCK ate the piece of popcorn and kept flying! Try again.     \x034\x02\\_O< [ <3 +' + str(ddmg) + ' ]\x02\x03')
+                        return
 
                 # the duck kept flying - bread
                 if pc.istok_n(rdata[server, chan]['popcorn'], duser, ',', '^', 0) is False and int(duckhp) > 1:
@@ -4842,8 +4849,9 @@ def bef(server, channel, user):
                 # befriended the golden duck
                 # popcorn
                 popc = False
-                if pc.istok_n(rdata[server, chan]['popcorn'], duser, ',', '^', 0) is True and int(duckhp) <= 2:
-                    popc = True
+                if pc.istok_n(rdata[server, chan]['popcorn'], duser, ',', '^', 0) is True or popped is True:
+                    if int(duckhp) <= 2:
+                        popc = True
 
                 if int(duckhp) == 1 or popc is True:
                     woid = 'bread'
@@ -4943,6 +4951,14 @@ def reloaf(server, channel, user):
 
     duser = user.decode()
     # duser = duser.lower()
+    # bread doesn't need to be reloaded (new player)
+    if not pc.cnfexists(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', duser):
+        if game_rules(server, dchannel, 'infammo') == 'on':
+            pc.privmsg_(server, channel, user.decode() + " > Your bread doesn't need to be reloaded. | Bread Pieces: 12/12 | Loaf: \x02\x033Inf\x02\x03")
+            return
+        if game_rules(server, dchannel, 'infammo') == 'off':
+            pc.privmsg_(server, channel, user.decode() + " > Your bread doesn't need to be reloaded. | Bread Pieces: 12/12 | Loaf: 3/3")
+            return
 
     # check all timed items/effects
     time_data(server, dchannel, duser, 'all-time')
@@ -4964,15 +4980,6 @@ def reloaf(server, channel, user):
         timeval = pc.timeconvert(ptime)
         pc.privmsg_(server, channel, user.decode() + ' > \x034You are exhausted from fatigue! \x033[Time Remaining: ' + str(timeval) + ']\x03')
         return
-
-    # bread doesn't need to be reloaded (new player)
-    if not pc.cnfexists(rdata[server, chan]['config_file'], server + '_' + chan + '_ducks', duser):
-        if game_rules(server, dchannel, 'infammo') == 'on':
-            pc.privmsg_(server, channel, user.decode() + " > Your bread doesn't need to be reloaded. | Bread Pieces: 12/12 | Loaf: \x02\x033Inf\x02\x03")
-            return
-        if game_rules(server, dchannel, 'infammo') == 'off':
-            pc.privmsg_(server, channel, user.decode() + " > Your bread doesn't need to be reloaded. | Bread Pieces: 12/12 | Loaf: 3/3")
-            return
 
     # reloading bread box
     bread = duckinfo(server, dchannel, duser, 'bread-b')
@@ -5023,13 +5030,13 @@ def duck_bomb(server, channel, user, target):
     chan = channel.replace('#', '')
     dsect = server + '_' + chan + '_ducks'
 
-    # check all timed items/effects
-    time_data(server, channel, user, 'all-time')
-
     # user hasn't played
     if pc.cnfexists(rdata[server, chan]['config_file'], dsect, user) is False:
         pc.privmsg_(server, channel.encode(), user + ' > You have not played yet.')
         return
+
+    # check all timed items/effects
+    time_data(server, channel, user, 'all-time')
 
     # user isn't in the channel
     if pc.is_on_chan(server, channel.encode(), target.encode()) is False:
