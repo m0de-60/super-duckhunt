@@ -16,6 +16,8 @@ Multi-threaded and asyncronous, better and faster, ported from the standalone v1
 
 <H2>VERSION & DEVELOPMENT NOTES:</H2>
 
+6-7-2026 Bug fix, improperly formatted quotations in a few lines, fixed.
+
 5-25-2026 Bug fix, explosive ammo (and possibly popcorn) were not being deducted properly when the player had 2 ammo/popcorn left. Issue was originally reported with explosive ammo, but when checking through the code I noticed that popcorn may be the same way, and applied similar fix to both. Also noticed a similar crashable issue to the past bug fix for !reload in separate command !reloaf/!bread and fixed that as well.
 
 5-21-2026 Bug fix, game crashing when new users use !reload, order of protocols was not in the proper order. Switched around some processes in !reload and fixed error.
