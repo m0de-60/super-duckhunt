@@ -82,14 +82,14 @@ def plugin_init_():
             # ##########################################################################################################
             # config file loading/creation for each server_channel instance! DO NOT CHANGE
             rdata[server, chan]['config_file'] = 'duckhunt_' + server + '_' + chan + '.cnf'
-            mprint(f'Checking for configuration file: {rdata[server, chan]['config_file']}...')
+            mprint(f"Checking for configuration file: {rdata[server, chan]['config_file']}...")
             if pc.isfile(rdata[server, chan]['config_file']) is False:
-                mprint(f'Configuration file {rdata[server, chan]['config_file']} not found, creating default configuration file...')
+                mprint(f"Configuration file {rdata[server, chan]['config_file']} not found, creating default configuration file...")
                 config_build(server, '#' + chan)
-                mprint(f'Configuration file creation complete for {rdata[server, chan]['config_file']}...')
+                mprint(f"Configuration file creation complete for {rdata[server, chan]['config_file']}...")
             else:
-                mprint(f'Configuration file {rdata[server, chan]['config_file']} found...')
-            mprint(f'Loading configuration from file {rdata[server, chan]['config_file']}...')
+                mprint(f"Configuration file {rdata[server, chan]['config_file']} found...")
+            mprint(f"Loading configuration from file {rdata[server, chan]['config_file']}...")
             # ##########################################################################################################
             rdata[server, chan]['rules'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'rules')
             rdata[server, chan]['maxducks'] = int(pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'maxducks'))
@@ -154,7 +154,7 @@ def plugin_init_():
                     continue
             # flood protection values
             rdata[server, chan]['flood_check'] = pc.cnfread(rdata[server, chan]['config_file'], server + '_' + chan, 'floodcheck')
-            mprint(f'Configuration from {rdata[server, chan]['config_file']} loaded successfully...')
+            mprint(f"Configuration from {rdata[server, chan]['config_file']} loaded successfully...")
             mprint(f'Finalizing configuration values for {server} #{chan}...')
             # ###########################################################################
             rdata[server, chan]['duckhunt'] = True  # Auto Start DuckHunt True or False #
