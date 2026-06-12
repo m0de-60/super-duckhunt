@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.12
 # Mode60
 # ======================================================================================================================
 # Title.............: 'Super DuckHunt'
@@ -1243,7 +1244,15 @@ def game_rules(server, channel, rule, args=''):
         #    irc.send(b'PRIVMSG ' + duckchan + b' :[' + duckchan + b' Super-DuckHunt In-Game Rules:] ' + confgun.encode() + b' | ' + ricogun.encode() + b' | ' + searchbush.encode() + b' | ' + ammomode.encode() + b' | ' + gamemode.encode() + b'\r\n')
         #    continue
         # irc.send(b'NOTICE ' + username + b' :[' + duckchan + b' Super-DuckHunt In-Game Rules:] ' + confgun.encode() + b' | ' + ricogun.encode() + b' | ' + searchbush.encode() + b' | ' + ammomode.encode() + b' | ' + gamemode.encode() + b'\r\n')
-        pc.notice_(server, args.encode(), '[DuckHunt] In-Game Rules for ' + channel + ': ' + confgun + ' | ' + ricogun + ' | ' + searchbush + ' | ' + ammomode + ' | ' + gamemode + ' | ' + camping + ' | ' + fatiguemode)
+        if game_rules(server, channel.lower(), 'bang') == 'on' and game_rules(server, channel.lower(), 'bef') == 'on':
+            pc.notice_(server, args.encode(), '[DuckHunt] In-Game Rules for ' + channel + ': ' + gamemode + ' | ' + confgun + ' | ' + ricogun + ' | ' + searchbush + ' | ' + ammomode + ' | ' + camping + ' | ' + fatiguemode)
+            return
+        if game_rules(server, channel.lower(), 'bang') == 'off':
+            pc.notice_(server, args.encode(), '[DuckHunt] In-Game Rules for ' + channel + ': ' + gamemode + ' | ' + searchbush + ' | ' + ammomode + ' | ' + camping + ' | ' + fatiguemode)
+            return
+        if game_rules(server, channel.lower(), 'bef') == 'off':
+            pc.notice_(server, args.encode(), '[DuckHunt] In-Game Rules for ' + channel + ': ' + gamemode + ' | ' + confgun + ' | ' + ricogun + ' | ' + searchbush + ' | ' + ammomode + ' | ' + camping + ' | ' + fatiguemode)
+            return
         return
     elif rule == 'gunricochet':
         rt = 0
@@ -2526,8 +2535,10 @@ def duckstats(server, channel, user, ruser, ext=''):
     # pc.notice_(server, user, huntingbag)
 
     pc.notice_(server, user, b'\x038,1[DuckStats:\x037,1 ' + ruser + b'\x038,1] ' + scorebox)
-    pc.notice_(server, user, gunbox)
-    pc.notice_(server, user, breadbox)
+    if game_rules(server, dchannel, 'bang') == 'on':
+        pc.notice_(server, user, gunbox)
+    if game_rules(server, dchannel, 'bef') == 'on':
+        pc.notice_(server, user, breadbox)
     pc.notice_(server, user, effectsbox)
     pc.notice_(server, user, huntingbag)
     return
@@ -3071,11 +3082,12 @@ def shop(server, channel, user, itemid, target=''):
     # 10 - Lucky Charm -------------------------------------------------------------------------------------------------
     # v1.9.9 - changed from 3-10 random to 4-12 random.
     if int(itemid) == 10:
-        # rules disabled
-        if game_rules(server, dchannel, 'bang') == 'off':
-            pc.notice_(server, user, 'Based on current game rules, this item is not available.')
-            return
-        # dont need it
+        # rules disabled - not sure why this was here
+        # if game_rules(server, dchannel, 'bang') == 'off':
+        #    pc.notice_(server, user, 'Based on current game rules, this item is not available.')
+        #    return
+
+        # already has lucky charm
         if pc.istok_n(rdata[server, chan]['lucky_charm'], duser, ',', '^', 0) is True:
             # time math here
             ptime = pc.gettok_n(rdata[server, chan]['lucky_charm'], duser, ',', '^', 0, 1)
